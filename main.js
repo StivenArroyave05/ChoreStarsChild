@@ -868,38 +868,6 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Gestionar tarea
-document
-  .getElementById('tasks-manage')
-  ?.addEventListener('click', e => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    const i = parseInt(btn.dataset.index, 10);
-
-    // Editar tarea
-    if (btn.classList.contains('btn-edit')) {
-      const t = tasks[i];
-      const newName = prompt('Nuevo nombre de la tarea:', t.name);
-      if (newName) t.name = newName;
-      const newPts = prompt('Nuevos puntos:', t.points);
-      if (!isNaN(Number(newPts))) t.points = Number(newPts);
-      saveTasks();
-    }
-
-    // Eliminar tarea
-    if (btn.classList.contains('btn-danger')) {
-      tasks.splice(i, 1);
-      saveTasks();
-    }
-
-    // Refresca UIs y puntos
-    renderTasksManage();
-    renderTasks();
-    renderChildTasks();
-    updatePointDisplay();
-  });
-
   // ➕ Agregar recompensa
   document.getElementById('add-reward')?.addEventListener('click', () => {
     const nameInput  = document.getElementById('new-reward-name');
@@ -918,37 +886,53 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Gestionar recompensa
-  // 3) Delegación click en "Recompensas" para editar / eliminar
-document
-  .getElementById('rewards-manage')
-  ?.addEventListener('click', e => {
+// Maneja acciones ✏️ y 🗑️ en tasks-manage y rewards-manage
+['tasks-manage','rewards-manage'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', e => {
     const btn = e.target.closest('button');
     if (!btn) return;
 
-    const i = parseInt(btn.dataset.index, 10);
+    const type  = btn.dataset.type;         // 'task' o 'reward'
+    const index = parseInt(btn.dataset.index, 10);
 
-    // Editar
     if (btn.classList.contains('btn-edit')) {
-      const r = rewards[i];
-      const newName = prompt('Nuevo nombre de la recompensa:', r.name);
-      if (newName) r.name = newName;
-      const newCost = prompt('Nuevo coste en puntos:', r.cost);
-      if (!isNaN(Number(newCost))) r.cost = Number(newCost);
-      saveRewards();
+      // Prompt de edición
+      if (type === 'task') {
+        const t = tasks[index];
+        const newName = prompt('Nuevo nombre de la tarea:', t.name);
+        const newPts  = prompt('Nuevos puntos:', t.points);
+        if (newName) t.name = newName;
+        if (!isNaN(Number(newPts))) t.points = Number(newPts);
+        saveTasks();
+      } else {
+        const r = rewards[index];
+        const newName = prompt('Nuevo nombre de la recompensa:', r.name);
+        const newCost = prompt('Nuevo coste en puntos:', r.cost);
+        if (newName) r.name = newName;
+        if (!isNaN(Number(newCost))) r.cost = Number(newCost);
+        saveRewards();
+      }
     }
 
-    // Eliminar
     if (btn.classList.contains('btn-danger')) {
-      rewards.splice(i, 1);
-      saveRewards();
+      // Confirmar y eliminar
+      if (!confirm(`¿Eliminar este ${type}?`)) return;
+      if (type === 'task') {
+        tasks.splice(index, 1);
+        saveTasks();
+      } else {
+        rewards.splice(index, 1);
+        saveRewards();
+      }
     }
 
-    // Siempre re-renderizar y actualizar puntos
+    // Re-renderiza ambas sections y puntos
+    renderTasksManage();
     renderRewardsManage();
     renderChildRewards();
     updatePointDisplay();
   });
+});
 
   // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
