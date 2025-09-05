@@ -834,47 +834,58 @@ document
     }
   });
 
-  // ➕ Evento Añadir Tarea (ahora asigna childId)
-  document.getElementById('add-task')?.addEventListener('click', () => {
-    const nameInput   = document.getElementById('new-task-name');
-    const ptsInput    = document.getElementById('new-task-points');
-    const name        = nameInput.value.trim();
-    const points      = parseInt(ptsInput.value, 10);
-    if (!name || isNaN(points) || !activeChildId) {
-      return alert('Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionara por defecto, 3.Puedes agregar tareas a cada niño seleccionado de manera independiente.');
-    }
-    tasks.push({
-      name,
-      points,
-      done: false,
-      penalized: false,
-      childId: activeChildId   // **importante**
-    });
-    saveTasks();
-    renderTasks();
-    renderChildTasks();
-    updatePointDisplay();
+// ➕ Evento Añadir Tarea (ahora asigna childId)
+document.getElementById('add-task')?.addEventListener('click', () => {
+  const nameInput = document.getElementById('new-task-name');
+  const ptsInput  = document.getElementById('new-task-points');
+  const name      = nameInput.value.trim();
+  const points    = parseInt(ptsInput.value, 10);
+
+  if (!name || isNaN(points) || !activeChildId) {
+    return alert('Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionará por defecto, 3. Puedes agregar tareas a cada niño seleccionado de manera independiente.');
+  }
+
+  tasks.push({
+    name,
+    points,
+    done: false,
+    penalized: false,
+    childId: activeChildId // **importante**
   });
 
+  saveTasks();
+  renderTasks();
+  renderChildTasks();
+  renderTasksManage(); // ✅ actualiza cards en configuración
+  updatePointDisplay();
 
-  // ➕ Agregar recompensa
-  document.getElementById('add-reward')?.addEventListener('click', () => {
-    const nameInput  = document.getElementById('new-reward-name');
-    const costInput  = document.getElementById('new-reward-cost');
-    const name       = nameInput?.value.trim();
-    const cost       = parseInt(costInput?.value, 10);
+  // ✅ Limpieza de campos
+  nameInput.value = '';
+  ptsInput.value  = '';
+});
 
-    if (!name || isNaN(cost)) {
-      return alert('Completa nombre y costo válido');
-    }
 
-    rewards.push({ name, cost });
-    saveRewards();
-    renderTasksManage();
-    renderRewardsManage();
-    renderChildRewards();
-    updatePointDisplay();
-  });
+// ➕ Agregar recompensa
+document.getElementById('add-reward')?.addEventListener('click', () => {
+  const nameInput = document.getElementById('new-reward-name');
+  const costInput = document.getElementById('new-reward-cost');
+  const name      = nameInput?.value.trim();
+  const cost      = parseInt(costInput?.value, 10);
+
+  if (!name || isNaN(cost)) {
+    return alert('Completa nombre y costo válido');
+  }
+
+  rewards.push({ name, cost });
+  saveRewards();
+  renderRewardsManage(); // ✅ actualiza cards en configuración
+  renderChildRewards();
+  updatePointDisplay();
+
+  // ✅ Limpieza de campos
+  nameInput.value = '';
+  costInput.value = '';
+});
 
 ['tasks-manage', 'rewards-manage'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', e => {
