@@ -1,0 +1,9 @@
+[build]
+  # no hay build command para sitio estático
+  publish = "."       # publica la carpeta actual
+
+# Opcional: para SPAs, redirige todo a index.html
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200

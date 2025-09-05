@@ -1,96 +1,955 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+/*──────────────────────────────────────────────────────────────────────────────
+  1. 🌈 Tipografía general
+──────────────────────────────────────────────────────────────────────────────*/
 body {
-  margin: 0;
+  background-color: #f9fafb; /* bg-gray-50 */
+  color: #1f2937;            /* text-gray-800 */
+  font-family: 'Nunito', sans-serif;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  2. 🧼 Utilidades personalizadas
+──────────────────────────────────────────────────────────────────────────────*/
+.hidden { display: none; }
+.hidden-important { display: none !important; }
+
+.tab-active {
+  color: #2563eb;            /* text-blue-600 */
+  font-weight: 700;          /* font-bold */
+  border-bottom: 4px solid #2563eb;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  3. 🎨 Transiciones suaves
+──────────────────────────────────────────────────────────────────────────────*/
+button,
+input,
+.fade-in,
+.slide-up {
+  transition: all 0.3s ease-in-out;
+}
+button:active {
+  transform: scale(0.97);
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  4. ✨ Animaciones de entrada
+──────────────────────────────────────────────────────────────────────────────*/
+.fade-in {
+  opacity: 0;
+}
+.fade-in.visible {
+  opacity: 1;
+}
+
+.slide-up {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.slide-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  5. 🎁 Recompensa “pop”
+──────────────────────────────────────────────────────────────────────────────*/
+.reward-pop {
+  animation: popIn 0.4s ease-out forwards;
+}
+@keyframes popIn {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  6. 📥 Modal animación
+──────────────────────────────────────────────────────────────────────────────*/
+#modal {
+  animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  7. 🧒 Inputs
+──────────────────────────────────────────────────────────────────────────────*/
+.input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  background-color: #fff;
+  border: 1px solid #d1d5db; /* border-gray-300 */
+  border-radius: 0.375rem;   /* rounded-md */
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+  8. 🎯 Botones base y variantes
+──────────────────────────────────────────────────────────────────────────────*/
+button {
+  font-weight: 600;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+}
+
+.btn-primary {
+  background-color: #2563eb; color: #fff;
+}
+.btn-primary:hover { background-color: #1e40af; }
+
+.btn-secondary {
+  background-color: #374151; color: #fff;
+}
+.btn-secondary:hover { background-color: #1f2937; }
+
+.btn-success {
+  background-color: #10b981; color: #fff;
+}
+.btn-success:hover {
+  background-color: #059669;
+}
+.btn-success:disabled,
+.btn-done {
+  background-color: #a7f3d0;
+  color: #064e3b;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-warning {
+  background-color: #f59e0b; color: #fff;
+}
+.btn-warning:hover { background-color: #d97706; }
+
+.btn-danger {
+  background-color: #dc2626; color: #fff;
+}
+.btn-danger:hover { background-color: #b91c1c; }
+
+.btn-indigo {
+  background-color: #6366f1; color: #fff;
+}
+.btn-indigo:hover { background-color: #4f46e5; }
+
+/*──────────────────────────────────────────────────────────────────────────────
+  9. ⚙️ Sección de configuración
+──────────────────────────────────────────────────────────────────────────────*/
+#settings h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  color: #1f2937;
+}
+#settings label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Unificar estilo de listas en Configuración
+─────────────────────────────────────────────────────────────*/
+#settings #tasks-manage,
+#settings #rewards-manage {
+  max-width: 480px;        /* ancho máximo uniforme */
+  margin: 0 auto;          /* centra en la sección */
+  padding: 0.5rem 1rem;    /* espacio interior */
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  flex-direction: column;
+  gap: 0.5rem;             /* separación vertical entre items */
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Card base para ambas listas */
+#settings .task-block,
+#settings .reward-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f3f4f6;             /* gris claro */
+  border: 1px solid #e5e7eb;      /* borde suave */
+  border-radius: 0.375rem;         /* esquinas redondeadas */
+  padding: 0.75rem 1rem;           /* p-3 px-4 */
+  transition: background-color 0.2s, transform 0.2s;
 }
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
+#settings .task-block:hover,
+#settings .reward-block:hover {
+  background: #e5e7eb;             /* gris un poco más oscuro */
+  transform: translateY(-1px);
+}
+
+/* Texto de ítems */
+#settings .task-block span,
+#settings .reward-block span {
+  font-size: 0.95rem;
+  color: #1f2937;                  /* gris oscuro */
+}
+
+/* Botones “Eliminar” y “Canjear” */
+#settings .task-block button,
+#settings .reward-block button {
+  padding: 0.25rem 0.75rem;        /* btn-sm */
+  font-size: 0.875rem;             /* text-sm */
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* Botón peligro (Eliminar) */
+#settings .btn-danger {
+  background: #ef4444;
+  color: white;
+}
+#settings .btn-danger:hover {
+  background: #dc2626;
+}
+
+/* Botón primario (Canjear) */
+#settings .btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+#settings .btn-primary:hover {
+  background: #2563eb;
+}
+
+/* Botón Compartir */
+#settings .share-btn {
+  background: #10b981;
+  color: white;
+  margin-left: 0.5rem;            /* separación si hay dos botones */
+}
+#settings .share-btn:hover {
+  background: #059669;
+}
+
+/* ──────────────────────────────────────────────────────────
+   Forzar una única línea en Configuración para tareas y recompensas
+─────────────────────────────────────────────────────────────*/
+#settings #tasks-manage .task-block,
+#settings #rewards-manage .reward-block {
+  display: flex;              /* fuerza layout en fila */
+  flex-direction: row;
+  align-items: center;        /* alinea verticalmente */
+  justify-content: space-between; /* separa texto y botón */
+  flex-wrap: nowrap;          /* no permitir salto de línea */
+}
+
+#settings #tasks-manage .task-block span,
+#settings #rewards-manage .reward-block span {
+  flex: 1;                    /* ocupa espacio sobrante */
+  margin-right: 0.75rem;      /* separa del botón */
+  white-space: nowrap;        /* no envuelve el texto */
+  overflow: hidden;
+  text-overflow: ellipsis;    /* “…” si el texto es muy largo */
+}
+
+#settings #tasks-manage .task-block button,
+#settings #rewards-manage .reward-block button {
+  flex-shrink: 0;             /* no se encoja ni salte línea */
+  margin: 0;                  /* elimina márgenes extra */
+}
+
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 10. 🧒 Tarjetas de tarea
+──────────────────────────────────────────────────────────────────────────────*/
+/* ────────────────────────────────────────────────────────────
+   Container y Título
+──────────────────────────────────────────────────────────────── */
+.tasks-section {
+  background: #f1f5f9;
   padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
+}
+
+.tasks-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e40af;  /* azul intenso */
+  margin-bottom: 1.5rem;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vanilla:hover {
-  filter: drop-shadow(0 0 2em #f7df1eaa);
+/* ────────────────────────────────────────────────────────────
+   Grid responsivo de cards
+──────────────────────────────────────────────────────────────── */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
 }
 
-.card {
-  padding: 2em;
+/* ────────────────────────────────────────────────────────────
+   Card de tarea (súper moderno)
+──────────────────────────────────────────────────────────────── */
+.task-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.read-the-docs {
-  color: #888;
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+/* Línea de acento en el borde izquierdo */
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: #3b82f6;  /* blue-500 */
+}
+
+/* Información de la tarea */
+.task-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.task-info input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: #3b82f6;
+}
+
+.task-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Botón “Hecho” */
+.task-actions .btn-complete {
+  background: #10b981;   /* emerald-500 */
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: none;
+  transition: background 0.2s ease;
+}
+
+.task-actions .btn-complete:hover {
+  background: #059669;   /* emerald-600 */
+}
+
+/* ────────────────────────────────────────────────────────────
+   Responsive: evitar overflow en móviles muy angostos
+──────────────────────────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .tasks-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .task-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+  }
+  
+  .task-actions {
+    width: 100%;
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 11. ✨ Animación de estrella
+──────────────────────────────────────────────────────────────────────────────*/
+@keyframes sparkle-fall {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  25% {
+    transform: translate(-50%, -80%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -120%) scale(0.5);
+  }
+}
+.sparkle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  font-size: 2.5rem;
+  color: #facc15;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: sparkle-fall 0.8s ease-out forwards;
+}
+
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 12. 🪦 Penalización
+──────────────────────────────────────────────────────────────────────────────*/
+.penalty-flash {
+  animation: fadeOut 2s ease forwards;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 13. 🗄️ Historial e insignias
+──────────────────────────────────────────────────────────────────────────────*/
+.badge-card {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.badge-card:hover {
+  transform: translateX(4px);
+  background-color: #fffbe6;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 14. 👜 Toast Notifications
+──────────────────────────────────────────────────────────────────────────────*/
+#toast {
+  transition: opacity 0.3s ease;
+}
+#toast.show {
+  display: block;
+  opacity: 1;
+}
+#toast.hide {
+  opacity: 0;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 15. 📚 Historial de semanas cerradas
+──────────────────────────────────────────────────────────────────────────────*/
+#weekly-history-list {
+  margin-top: 0.5rem;
+}
+
+.week-entry {
+  border-left: 4px solid #60a5fa;    /* azul */
+  background-color: #fff;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 0.75rem;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.week-entry:hover {
+  background-color: #f0f9ff;         /* azul muy claro */
+  transform: translateX(4px);
+}
+.week-entry p:first-child {
+  margin-bottom: 0.25rem;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 16. sección de cutoff en Tasks
+──────────────────────────────────────────────────────────────────────────────*/
+.cutoff-info {
+  font-size: 0.875rem;        /* text-sm */
+  color: #4b5563;             /* text-gray-600 */
+  margin-bottom: 1rem;
+}
+
+/*──────────────────────────────────────────────────────────────────────────────
+ 17. Responsividad
+──────────────────────────────────────────────────────────────────────────────*/
+@media (min-width: 640px) {
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+  }
+}
+
+/* 1) Keyframes de la animación “popIn” */
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* 2) Efecto “pop” para el ícono de recompensa */
+.reward-sparkle {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  color: #facc15;             /* amarillo vivo */
+  animation: popIn 0.6s ease-out both;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* 3) Estilo puro para el botón “Compartir” sin usar @apply */
+.share-btn {
+  background-color: #4338ca;  /* equivalente a bg-indigo-700 */
+  color: #ffffff;             /* text-white */
+  padding: 0.25rem 0.5rem;    /* btn-sm */
+  border-radius: 0.375rem;    /* rounded */
+  margin-left: 0.5rem;        /* ml-2 */
+  font-size: 0.875rem;        /* text-sm */
   cursor: pointer;
-  transition: border-color 0.25s;
+  border: none;
+  transition: background-color 0.2s ease;
 }
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+.share-btn:hover {
+  background-color: #3730a3;  /* darken indigo */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+
+
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Contenedor: Rejilla de recompensas
+───────────────────────────────────────────────────────────────────────────────*/
+#rewards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Card de recompensa
+───────────────────────────────────────────────────────────────────────────────*/
+.reward-block {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;            /* gris claro */
+  border-radius: 0.5rem;                 /* rounded-lg */
+  padding: 1rem;                         /* p-4 */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);  /* sombra discreta */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.reward-block:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Estado “canjeada”
+───────────────────────────────────────────────────────────────────────────────*/
+.reward-block.redeemed {
+  background: #f0fdf4;                 /* verde muy claro */
+  border-color: #10b981;               /* emerald-500 */
+}
+
+.reward-block.redeemed > span:first-child {
+  text-decoration: line-through;
+  color: #6b7280;                       /* texto gris */
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Título (nombre + costo)
+───────────────────────────────────────────────────────────────────────────────*/
+.reward-block > span {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: block;
+  text-align: center;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Botones al pie de la tarjeta
+───────────────────────────────────────────────────────────────────────────────*/
+.reward-block .btn-primary,
+.reward-block .share-btn {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.reward-block .btn-primary {
+  background: #3b82f6;                  /* blue-500 */
+  color: white;
+}
+.reward-block .btn-primary:hover {
+  background: #2563eb;                  /* blue-600 */
+}
+
+.reward-block .share-btn {
+  background: #10b981;                  /* emerald-500 */
+  color: white;
+}
+.reward-block .share-btn:hover {
+  background: #059669;                  /* emerald-600 */
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Animación “popIn” para .reward-sparkle
+───────────────────────────────────────────────────────────────────────────────*/
+@keyframes popIn {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+.reward-sparkle {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  color: #facc15;
+  animation: popIn 0.6s ease-out both;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   1. Contenedor principal
+───────────────────────────────────────────────────────────────*/
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(90deg, #2563EB 0%, #3B82F6 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* ────────────────────────────────────────────────────────────
+   2. Área de información (logo + título + subtítulo)
+───────────────────────────────────────────────────────────────*/
+.app-header .header-info {
+  flex: 1;
+  min-width: 200px;
+  text-align: center;
+}
+
+.app-header .header-info h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: 0.05em;
+}
+
+.app-header .header-info label {
+  display: block;
+  margin-top: 0.25rem;
+  font-weight: 400;
+  opacity: 0.85;
+  margin-bottom: 0.50rem; 
+}
+
+/* ────────────────────────────────────────────────────────────
+   3. Área de stats (puntos)
+───────────────────────────────────────────────────────────────*/
+.header-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+  min-width: 200px;
+}
+
+/* Cada bloque de puntos como mini-card */
+.header-stats p {
+  margin: 0;
+  background: rgba(255,255,255,0.15);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  transition: background 0.2s;
+}
+
+.header-stats p:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* Resaltar el total disponible */
+.header-stats p.total {
+  background: rgba(255,255,255,0.25);
+  font-weight: 600;
+}
+
+/* Iconos con un poco de espacio */
+.header-stats p span {
+  margin-left: 0.25rem;
+}
+
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Navegación principal (.app-nav + .tab-btn)
+───────────────────────────────────────────────────────────────────────────────*/
+
+/* Contenedor sticky con sombra */
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Botones de pestaña */
+.app-nav .tab-btn {
+  flex: 1;                         /* igual ancho */
+  text-align: center;
+  padding: 0.75rem 0;              /* alto constante */
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280;                  /* gris medio */
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Hover para dar feedback */
+.app-nav .tab-btn:hover {
+  color: #111827;                  /* gris oscuro */
+}
+
+/* Pestaña activa: color + subrayado */
+.app-nav .tab-btn.tab-active {
+  color: #2563eb;                  /* azul 600 */
+  border-bottom-color: #2563eb;    /* subrayado azul */
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   Rejilla responsive para insignias
+───────────────────────────────────────────────────────────────*/
+#badge-list {
+  display: grid;
+  grid-template-columns: 1fr;   /* 1 columna en móvil */
+  gap: 0.75rem;                 /* espacio entre cards */
+  padding: 1rem;                /* margen interior */
+}
+
+.badge-card {
+  background-color: #e3fdcb;
+  width: 100%;                  /* ocupa todo el ancho de la celda */
+  box-sizing: border-box;       /* incluye padding en el ancho */
+}
+
+/* A partir de tablets, varias columnas */
+@media (min-width: 640px) {
+  #badge-list {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
-  a:hover {
-    color: #747bff;
+}
+
+/* Ajuste de padding en móviles muy estrechos */
+@media (max-width: 360px) {
+  .badge-card {
+    padding: 0.5rem;            /* reduce un poco el padding */
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   Estilos para el logo en el header
+───────────────────────────────────────────────────────────────*/
+#app-logo {
+  display: block;
+  border-radius: 0.375rem;           /* esquinas redondeadas */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  object-fit: contain;
+}
+
+
+
+
+/* ────────────────────────────────────────────────────────────
+   Header móvil: logo > título > subtítulo, todo centrado
+───────────────────────────────────────────────────────────────*/
+@media (max-width: 640px) {
+  /* El header general pasa a columna y centra su contenido */
+  .app-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
+
+  /* Dentro de header-info forzamos columna y centrado */
+  .app-header .header-info {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;  /* espacio antes de los stats */
+  }
+
+  /* Logo encima, con margen inferior */
+  .app-header #app-logo {
+    margin: 0 0 0.5rem;
+  }
+
+  /* Título con margen un pelín abajo */
+  .app-header .header-info h1 {
+    margin: 0 0 0.25rem;
+  }
+
+  /* Subtítulo ya está bajo el h1; solo ajusta opacidad si quieres */
+  .app-header .header-info label {
+    margin: 0;
+  }
+
+  /* Los stats pueden ir debajo ocupando todo el ancho */
+  .app-header .header-stats {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    justify-items: center;
+  }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   Card modernizado para secciones de Configuración
+──────────────────────────────────────────────────────────────── */
+#settings .settings-section {
+  background: #ffffff;                        
+  border-radius: 0.75rem;                     /* bordes más redondos */
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);     /* sombra suave y profunda */
+  padding: 1.5rem;                            
+  margin-bottom: 1.5rem;                     
+  border: none;                               /* eliminamos el borde lateral */
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#settings .settings-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+/* Título de cada sección (primer label) */
+#settings .settings-section > label:first-child {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2563eb;                             /* color acento */
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+/* Contenedor de inputs + botón en línea */
+#settings .settings-section .flex {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;                            /* para que baje si es muy estrecho */
+  margin-bottom: 1rem;
+}
+
+/* Inputs con estilo consistente */
+#settings .settings-section .input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.5rem 0.75rem;                    
+  border: 1px solid #cbd5e1;                 /* gris suave */
+  border-radius: 0.375rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#settings .settings-section .input:focus {
+  outline: none;
+  border-color: #2563eb;                     
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+/* Botones tamaño y espaciado uniforme */
+#settings .settings-section .btn {
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* Gestión de listados (niños, tareas, recompensas) */
+#settings .settings-section ul,
+#settings .settings-section #tasks-manage,
+#settings .settings-section #rewards-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Entrada de listado inline (opcional tags) */
+#settings .settings-section ul li {
+  background: #f3f4f6;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Ajuste responsive: en pantallas muy estrechas bajan en columna */
+@media (max-width: 480px) {
+  #settings .settings-section .flex {
+    flex-direction: column;
+  }
+}
+
+
+/* ────────────────────────────────────────────────────────────
+   Evitar que el botón baje de línea en .settings-section .flex
+──────────────────────────────────────────────────────────────── */
+#settings .settings-section .flex {
+  flex-wrap: nowrap;     /* ya no se envuelven los hijos */
+  overflow-x: auto;      /* scroll horizontal si hace falta */
+}
+
+/* Permitir que los inputs se encojan antes de saltar de línea */
+#settings .settings-section .flex .input {
+  min-width: 0;          /* permite al input encogerse por debajo de su contenido */
+  flex: 1;               /* ocupa el espacio sobrante */
+}
+
+/* Evitar que el botón se encoja o envuelva */
+#settings .settings-section .flex .btn {
+  flex-shrink: 0;        /* mantiene su ancho y no envuelve */
 }
