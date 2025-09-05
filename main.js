@@ -399,21 +399,30 @@ function shareReward(rewardName) {
 ////////////////////////////////////////////////////////////////////////////////
 // 8. Renderizado de listas
 ////////////////////////////////////////////////////////////////////////////////
-function renderTasks() {
-  const c = document.getElementById('tasks-manage');
-  if (!c) return;
-  c.innerHTML = '';
-  tasks
-    .filter(t => t.childId === activeChildId)         // ¡filtrar por niño!
-    .forEach((t, i) => {
-      c.innerHTML += `
-        <div class="task-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
-          <span>${t.name} (${t.points} pts)</span>
-          <button class="btn-danger" data-index="${i}">Eliminar</button>
-        </div>`;
-    });
-}
-
++ /**
++  * Renderiza la lista de tareas en Configuración como cards con editar/borrar
++  */
++ function renderTasksManage() {
++   const c = document.getElementById('tasks-manage');
++   if (!c) return;
++   c.innerHTML = '';
++
++   tasks
++     .filter(t => t.childId === activeChildId)
++     .forEach((t, i) => {
++       c.innerHTML += `
++         <div class="card">
++           <div class="card-content">
++             <span class="card-title">${t.name}</span>
++             <small>${t.points} pts</small>
++           </div>
++           <div class="card-actions">
++             <button class="btn-edit"   data-type="task"   data-index="${i}">✏️</button>
++             <button class="btn-delete" data-type="task"   data-index="${i}">🗑️</button>
++           </div>
++         </div>`;
++     });
++ }
 /**
  * Renderiza las tareas del niño activo dentro de #tasks-list
  */
@@ -473,87 +482,29 @@ function renderChildTasks() {
     container.appendChild(card);
   });
 }
-function renderRewardsManage() {
-  const c = document.getElementById('rewards-manage');
-  if (!c) return;
-  c.innerHTML = '';
 
-  rewards.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    // Contenido principal
-    const content = document.createElement('div');
-    content.className = 'card-content';
-    content.innerHTML = `
-      <span class="card-title">${r.name}</span>
-      <small>Coste: ${r.cost} pts</small>
-    `;
-
-    // Acciones
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-edit';
-    editBtn.dataset.type = 'reward';
-    editBtn.dataset.index = i;
-    editBtn.textContent = '✏️';
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-delete';
-    deleteBtn.dataset.type = 'reward';
-    deleteBtn.dataset.index = i;
-    deleteBtn.textContent = '🗑️';
-
-    actions.appendChild(editBtn);
-    actions.appendChild(deleteBtn);
-
-    card.appendChild(content);
-    card.appendChild(actions);
-    c.appendChild(card);
-  });
-}
-
-function renderTasksManage() {
-  const c = document.getElementById('tasks-manage');
-  if (!c) return;
-  c.innerHTML = '';
-
-  tasks.forEach((t, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const content = document.createElement('div');
-    content.className = 'card-content';
-    content.innerHTML = `
-      <span class="card-title">${t.name}</span>
-      <small>${t.points} pts</small>
-    `;
-
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'btn-edit';
-    editBtn.dataset.type = 'task';
-    editBtn.dataset.index = i;
-    editBtn.textContent = '✏️';
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'btn-delete';
-    deleteBtn.dataset.type = 'task';
-    deleteBtn.dataset.index = i;
-    deleteBtn.textContent = '🗑️';
-
-    actions.appendChild(editBtn);
-    actions.appendChild(deleteBtn);
-
-    card.appendChild(content);
-    card.appendChild(actions);
-    c.appendChild(card);
-  });
-}
++ /**
++  * Renderiza la lista de recompensas en Configuración como cards con editar/borrar
++  */
++ function renderRewardsManage() {
++   const c = document.getElementById('rewards-manage');
++   if (!c) return;
++   c.innerHTML = '';
++
++   rewards.forEach((r, i) => {
++     c.innerHTML += `
++       <div class="card">
++         <div class="card-content">
++           <span class="card-title">${r.name}</span>
++           <small>Coste: ${r.cost} pts</small>
++         </div>
++         <div class="card-actions">
++           <button class="btn-edit"   data-type="reward" data-index="${i}">✏️</button>
++           <button class="btn-delete" data-type="reward" data-index="${i}">🗑️</button>
++         </div>
++       </div>`;
++   });
++ }
 
 function renderChildRewards() {
   const c = document.getElementById('rewards-list');
@@ -776,9 +727,8 @@ window.addEventListener('DOMContentLoaded', () => {
   applyDailyPenalties();
   renderWeekStart();
   renderWeeklyHistory();
-  renderTasks();
++ renderTasksManage();
   renderChildTasks();
-  renderTasksManage();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
@@ -834,105 +784,104 @@ document
     }
   });
 
-// ➕ Evento Añadir Tarea (ahora asigna childId)
-document.getElementById('add-task')?.addEventListener('click', () => {
-  const nameInput = document.getElementById('new-task-name');
-  const ptsInput  = document.getElementById('new-task-points');
-  const name      = nameInput.value.trim();
-  const points    = parseInt(ptsInput.value, 10);
+  // ➕ Evento Añadir Tarea (ahora asigna childId)
+  document.getElementById('add-task')?.addEventListener('click', () => {
+    const nameInput   = document.getElementById('new-task-name');
+    const ptsInput    = document.getElementById('new-task-points');
+    const name        = nameInput.value.trim();
+    const points      = parseInt(ptsInput.value, 10);
+    if (!name || isNaN(points) || !activeChildId) {
+      return alert('Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionara por defecto, 3.Puedes agregar tareas a cada niño seleccionado de manera independiente.');
+    }
+    tasks.push({
+      name,
+      points,
+      done: false,
+      penalized: false,
+      childId: activeChildId   // **importante**
+    });
+    saveTasks();
++   renderTasksManage();
++   renderChildTasks();
+    updatePointDisplay();
 
-  if (!name || isNaN(points) || !activeChildId) {
-    return alert('Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionará por defecto, 3. Puedes agregar tareas a cada niño seleccionado de manera independiente.');
-  }
-
-  tasks.push({
-    name,
-    points,
-    done: false,
-    penalized: false,
-    childId: activeChildId // **importante**
++   // Limpiar inputs
++   nameInput.value = '';
++   ptsInput.value  = '';
   });
 
-  saveTasks();
-  renderTasks();
-  renderChildTasks();
-  updatePointDisplay();
 
-  // ✅ Limpieza de campos
-  nameInput.value = '';
-  ptsInput.value  = '';
-});
+  // ➕ Agregar recompensa
+  document.getElementById('add-reward')?.addEventListener('click', () => {
+    const nameInput  = document.getElementById('new-reward-name');
+    const costInput  = document.getElementById('new-reward-cost');
+    const name       = nameInput?.value.trim();
+    const cost       = parseInt(costInput?.value, 10);
 
-
-// ➕ Agregar recompensa
-document.getElementById('add-reward')?.addEventListener('click', () => {
-  const nameInput = document.getElementById('new-reward-name');
-  const costInput = document.getElementById('new-reward-cost');
-  const name      = nameInput?.value.trim();
-  const cost      = parseInt(costInput?.value, 10);
-
-  if (!name || isNaN(cost)) {
-    return alert('Completa nombre y costo válido');
-  }
-
-  rewards.push({ name, cost });
-  saveRewards();
-  renderRewardsManage(); // ✅ actualiza cards en configuración
-  renderChildRewards();
-  updatePointDisplay();
-
-  // ✅ Limpieza de campos
-  nameInput.value = '';
-  costInput.value = '';
-});
-
-
-['tasks-manage', 'rewards-manage'].forEach(id => {
-  document.getElementById(id)?.addEventListener('click', e => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-
-    const type  = btn.dataset.type;
-    const index = parseInt(btn.dataset.index, 10);
-
-    if (btn.classList.contains('btn-edit')) {
-      if (type === 'task') {
-        const t = tasks[index];
-        const newName = prompt('Nuevo nombre de la tarea:', t.name);
-        const newPts  = prompt('Nuevos puntos:', t.points);
-        if (newName) t.name = newName;
-        if (!isNaN(Number(newPts))) t.points = Number(newPts);
-        saveTasks();
-      } else {
-        const r = rewards[index];
-        const newName = prompt('Nuevo nombre de la recompensa:', r.name);
-        const newCost = prompt('Nuevo coste en puntos:', r.cost);
-        if (newName) r.name = newName;
-        if (!isNaN(Number(newCost))) r.cost = Number(newCost);
-        saveRewards();
-      }
+    if (!name || isNaN(cost)) {
+      return alert('Completa nombre y costo válido');
     }
 
-    if (btn.classList.contains('btn-delete')) {
-      if (!confirm(`¿Eliminar esta ${type}?`)) return;
-      if (type === 'task') {
-        tasks.splice(index, 1);
-        saveTasks();
-      } else {
-        rewards.splice(index, 1);
-        saveRewards();
-      }
-    }
-
-    // Re-renderiza y actualiza puntos
-    renderTasksManage();
+    rewards.push({ name, cost });
+    saveRewards();
     renderRewardsManage();
-    renderChildTasks();
     renderChildRewards();
     updatePointDisplay();
-  });
-});
 
++  // Limpiar inputs
++  nameInput.value = '';
++  costInput.value = '';
+  });
+
++ ['tasks-manage','rewards-manage'].forEach(id => {
++   document.getElementById(id)?.addEventListener('click', e => {
++     const btn   = e.target.closest('button');
++     if (!btn) return;
++
++     const type  = btn.dataset.type;            // 'task' o 'reward'
++     const index = parseInt(btn.dataset.index, 10);
++
++     // ✏️ Editar
++     if (btn.classList.contains('btn-edit')) {
++       if (type === 'task') {
++         const item = tasks.filter(t => t.childId === activeChildId)[index];
++         const newName = prompt('Nuevo nombre de la tarea:', item.name);
++         const newPts  = prompt('Nuevos puntos:', item.points);
++         if (newName) item.name   = newName;
++         if (!isNaN(Number(newPts))) item.points = Number(newPts);
++         saveTasks();
++       } else {
++         const item = rewards[index];
++         const newName = prompt('Nuevo nombre de la recompensa:', item.name);
++         const newCost = prompt('Nuevo coste en puntos:', item.cost);
++         if (newName) item.name = newName;
++         if (!isNaN(Number(newCost))) item.cost = Number(newCost);
++         saveRewards();
++       }
++     }
++
++     // 🗑️ Borrar
++     if (btn.classList.contains('btn-delete')) {
++       if (!confirm(`¿Eliminar este ${type}?`)) return;
++       if (type === 'task') {
++         const filtered = tasks.filter(t => t.childId === activeChildId);
++         const realIdx  = tasks.findIndex(t => t === filtered[index]);
++         tasks.splice(realIdx, 1);
++         saveTasks();
++       } else {
++         rewards.splice(index, 1);
++         saveRewards();
++       }
++     }
++
++     // Re-renderizar
++     renderTasksManage();
++     renderRewardsManage();
++     renderChildTasks();
++     renderChildRewards();
++     updatePointDisplay();
++   });
++ });
 
   // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
@@ -974,7 +923,6 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   // F) Refresca UI
   renderTasks();
   renderChildTasks();
-  renderTasksManage();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
