@@ -1,9 +1,13 @@
-[build]
-  # no hay build command para sitio estático
-  publish = "."       # publica la carpeta actual
+# netlify.toml
 
-# Opcional: para SPAs, redirige todo a index.html
+[build]
+  publish = "."    # tu carpeta raíz con index.html
+
+# 1) Excluir de la regla SPA todos los ficheros estáticos:
 [[redirects]]
   from = "/*"
   to   = "/index.html"
   status = 200
+  # los paths que coincidan con estas extensiones NO se redirigen:
+  conditions = { NotFile = true, NotPath = "/api/*" }
+
