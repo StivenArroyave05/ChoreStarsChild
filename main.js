@@ -793,7 +793,7 @@ document
 
   // Limpia campos
   nameInput.value = '';
-  costInput.value = '';
+  ptsInput.value = '';
   });
 
 
@@ -849,7 +849,7 @@ document
 
   // Limpia campos
   nameInput.value = '';
-  costInput.value = '1';
+  costInput.value = '';
   });
 
 
