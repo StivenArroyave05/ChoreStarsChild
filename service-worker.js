@@ -1,7 +1,9 @@
 // service-worker.js
 
-const CACHE_STATIC  = 'static-v1';
-const CACHE_RUNTIME = 'runtime-v1';
+// 1) Cambia este VERSION cada vez que despliegues (p. ej. 'v2' → 'v3')
+const VERSION        = 'v2';
+const CACHE_STATIC   = `static-${VERSION}`;
+const CACHE_RUNTIME  = 'runtime-v1';
 
 const PRECACHE_URLS = [
   '/', 
@@ -12,77 +14,85 @@ const PRECACHE_URLS = [
   '/assets/logo.png'
 ];
 
-// 1) Precaching de recursos locales
 self.addEventListener('install', event => {
+  console.log('[SW] Install - version:', VERSION);
   event.waitUntil(
-    caches
-      .open(CACHE_STATIC)
-      .then(cache => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_STATIC)
+      .then(cache => {
+        return Promise.all(
+          PRECACHE_URLS.map(url =>
+            cache.add(url).catch(err => {
+              console.warn(`[SW] Precaching falló en ${url}:`, err);
+            })
+          )
+        );
+      })
       .then(() => self.skipWaiting())
   );
 });
 
-// 2) Limpieza de cachés antiguas y toma de control inmediato
 self.addEventListener('activate', event => {
+  console.log('[SW] Activate - limpiando cachés antiguas');
   event.waitUntil(
-    caches
-      .keys()
-      .then(keys =>
-        Promise.all(
-          keys
-            .filter(key => key !== CACHE_STATIC && key !== CACHE_RUNTIME)
-            .map(oldKey => caches.delete(oldKey))
-        )
-      )
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key !== CACHE_STATIC && key !== CACHE_RUNTIME)
+          .map(oldKey => {
+            console.log('[SW] Eliminando caché antigua:', oldKey);
+            return caches.delete(oldKey);
+          })
+      ))
       .then(() => self.clients.claim())
   );
 });
 
-// 3) Listener para mensajes de la página (ej. SKIP_WAITING)
+// Permite al cliente enviar SKIP_WAITING
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] SKIP_WAITING recibido — activando nuevo SW');
     self.skipWaiting();
   }
 });
 
-// 4) Estrategias de fetch
 self.addEventListener('fetch', event => {
   const requestURL = new URL(event.request.url);
 
-  // 4.a) Recursos de este dominio: Cache-first, luego Network + cache runtime
+  // 2.a) Cache-first para recursos de este dominio
   if (requestURL.origin === self.location.origin) {
     event.respondWith(
-      caches.match(event.request).then(cached => {
-        if (cached) return cached;
-        return fetch(event.request).then(response => {
-          return caches.open(CACHE_RUNTIME).then(cache => {
-            cache.put(event.request, response.clone());
-            return response;
+      caches.match(event.request)
+        .then(cached => {
+          if (cached) return cached;
+          return fetch(event.request).then(response => {
+            return caches.open(CACHE_RUNTIME)
+              .then(cache => {
+                cache.put(event.request, response.clone());
+                return response;
+              });
           });
-        });
-      })
+        })
     );
     return;
   }
 
-  // 4.b) Google Fonts: Network-first, luego fallback a cache
+  // 2.b) Network-first para Google Fonts
   if (
     requestURL.host === 'fonts.googleapis.com' ||
     requestURL.host === 'fonts.gstatic.com'
   ) {
     event.respondWith(
       fetch(event.request)
-        .then(networkResponse => {
-          // opcional: cachear la respuesta opaca
-          const clone = networkResponse.clone();
+        .then(networkRes => {
+          const clone = networkRes.clone();
           caches.open('fonts-cache').then(cache => cache.put(event.request, clone));
-          return networkResponse;
+          return networkRes;
         })
         .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // 4.c) Otros orígenes de terceros: network-only
+  // 2.c) Otros orígenes: network-only
   event.respondWith(fetch(event.request));
 });

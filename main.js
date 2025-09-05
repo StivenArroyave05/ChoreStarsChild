@@ -943,34 +943,66 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   });
 
   // 🚀 Service Worker PWA
+  // 🚀 Service Worker PWA con auto-update
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/service-worker.js')  // ruta relativa, sin “/”
-      .then(() => console.log('✅ SW registrado'))
-      .catch(err => console.error('❌ SW error', err));
+    // Registramos tras el load para garantizar que todo está listo
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('service-worker.js');
+        console.log('✅ SW registrado');
+
+        // 1) Si ya había un SW en waiting (esperando a activarse), forzamos skipWaiting
+        if (registration.waiting) {
+          sendSkipWaiting(registration.waiting);
+        }
+
+        // 2) Cuando se detecta una nueva versión de SW…
+        registration.addEventListener('updatefound', () => {
+          const newSW = registration.installing;
+          console.log('👀 SW updatefound, estado:', newSW.state);
+          newSW.addEventListener('statechange', () => {
+            console.log('👀 SW statechange:', newSW.state);
+            // Si ya había un controlador activo, es una actualización
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              sendSkipWaiting(newSW);
+            }
+          });
+        });
+
+      } catch (err) {
+        console.error('❌ SW error', err);
+      }
+    });
   }
- 
-  });
+
+  // ➕ Evento para tu botón “Instalar actualizaciones”
+  document
+    .getElementById('install-updates')
+    ?.addEventListener('click', async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return console.warn('No hay SW registrado.');
+      // Si ya hubo un SW precargado y waiting → skip
+      if (registration.waiting) {
+        sendSkipWaiting(registration.waiting);
+      } else {
+        // Sino, fuerza la búsqueda de una nueva versión
+        registration.update();
+      }
+      flashMessage('Buscando actualizaciones…');
+    });
+
+}); // fin DOMContentLoaded
 
 /**
- * Pide al SW que se actualice o, si ya tiene una versión "waiting",
- * le envía SKIP_WAITING para activarla inmediatamente.
+ * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
  */
-async function triggerServiceWorkerUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-
-  const registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) {
-    console.warn('No SW registration encontrada.');
-    return;
-  }
-
-  // Si hay un SW en waiting, pídele que se active
-  if (registration.waiting) {
-    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-    return;
-  }
-
-  // Si no, fuerza la comprobación de una nueva versión
-  registration.update();
+function sendSkipWaiting(worker) {
+  console.log('✉️ Enviando SKIP_WAITING al SW…');
+  worker.postMessage({ type: 'SKIP_WAITING' });
+  worker.addEventListener('statechange', () => {
+    if (worker.state === 'activated') {
+      console.log('🔄 SW activado, recargando página');
+      window.location.reload();
+    }
+  });
 }
