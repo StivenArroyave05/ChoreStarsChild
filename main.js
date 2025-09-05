@@ -933,44 +933,11 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   });
 
   // 🚀 Service Worker PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('service-worker.js');
-
-      // 1) Detecta si ya hay un SW esperando para activarse
-      if (registration.waiting) {
-        updateServiceWorker(registration.waiting);
-      }
-
-      // 2) Escucha nuevos SW instalándose
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        newWorker.addEventListener('statechange', () => {
-          // Cuando termine la instalación y haya un SW activo previo…
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            updateServiceWorker(newWorker);
-          }
-        });
-      });
-    } catch (err) {
-      console.error('❌ SW registration failed:', err);
-    }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/service-worker.js')  // ruta relativa, sin “/”
+      .then(() => console.log('✅ SW registrado'))
+      .catch(err => console.error('❌ SW error', err));
+  }
+ 
   });
-}
-
-/**
- * Envía SKIP_WAITING al SW y, tras activarse, recarga la página.
- */
-function updateServiceWorker(worker) {
-  // 1) Envía mensaje que dispara skipWaiting() en el SW
-  worker.postMessage({ type: 'SKIP_WAITING' });
-
-  // 2) Espera a que el SW pase a estado 'activated'
-  worker.addEventListener('statechange', () => {
-    if (worker.state === 'activated') {
-      console.log('🔄 Nueva versión activada, recargando…');
-      window.location.reload();
-    }
-  });
-}
