@@ -18,17 +18,16 @@ self.addEventListener('install', event => {
   );
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_STATIC && key !== CACHE_RUNTIME)
-          .map(key => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+
 
 self.addEventListener('fetch', event => {
   const requestURL = new URL(event.request.url);

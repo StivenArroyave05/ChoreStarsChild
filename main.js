@@ -715,6 +715,16 @@ window.addEventListener('DOMContentLoaded', () => {
   updatePointDisplay();
   showTab('tasks');
 
+// Dentro de window.addEventListener('DOMContentLoaded', …)
+document
+  .getElementById('install-updates')
+  ?.addEventListener('click', () => {
+    triggerServiceWorkerUpdate();
+    // opcional: feedback al usuario
+    flashMessage('Buscando actualizaciones…');
+  });
+
+
   // ➕ Evento Añadir Niño
   document.getElementById('add-child')?.addEventListener('click', () => {
     const input = document.getElementById('new-child-name');
@@ -941,3 +951,26 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   }
  
   });
+
+/**
+ * Pide al SW que se actualice o, si ya tiene una versión "waiting",
+ * le envía SKIP_WAITING para activarla inmediatamente.
+ */
+async function triggerServiceWorkerUpdate() {
+  if (!('serviceWorker' in navigator)) return;
+
+  const registration = await navigator.serviceWorker.getRegistration();
+  if (!registration) {
+    console.warn('No SW registration encontrada.');
+    return;
+  }
+
+  // Si hay un SW en waiting, pídele que se active
+  if (registration.waiting) {
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    return;
+  }
+
+  // Si no, fuerza la comprobación de una nueva versión
+  registration.update();
+}
