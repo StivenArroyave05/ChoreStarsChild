@@ -474,7 +474,50 @@ function renderChildTasks() {
   });
 }
 
-// 1) Render en “settings” con cards y botones de editar/eliminar
+
+ function renderTasksManage() {
+   const container = document.getElementById('tasks-manage');
+   if (!container) return;
+   container.innerHTML = '';
+
+   tasks.forEach((t, i) => {
+     // Card wrapper
+     const card = document.createElement('div');
+     card.className = 'card';
+
+     // Contenido
+     const content = document.createElement('div');
+     content.className = 'card-content';
+     content.innerHTML = `
+       <span class="card-title">${t.name}</span>
+       <small>${t.points} pts</small>
+     `;
+
+     // Acciones
+     const actions = document.createElement('div');
+     actions.className = 'card-actions';
+
+     // Editar
+     const editBtn = document.createElement('button');
+     editBtn.className = 'btn btn-sm btn-edit';
+     editBtn.dataset.index = i;
+     editBtn.textContent = '✏️';
+     actions.appendChild(editBtn);
+
+     // Eliminar
+     const delBtn = document.createElement('button');
+     delBtn.className = 'btn btn-sm btn-danger';
+     delBtn.dataset.index = i;
+     delBtn.textContent = '🗑️';
+     actions.appendChild(delBtn);
+
+     // Ensamblar
+     card.appendChild(content);
+     card.appendChild(actions);
+     container.appendChild(card);
+   });
+ }
+
 function renderRewardsManage() {
   const container = document.getElementById('rewards-manage');
   if (!container) return;
@@ -747,6 +790,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderWeeklyHistory();
   renderTasks();
   renderChildTasks();
+  renderTasksManage();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
@@ -824,16 +868,36 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Eliminar tarea
-  document.getElementById('tasks-manage')?.addEventListener('click', e => {
-    if (e.target.matches('.btn-danger')) {
-      const i = parseInt(e.target.dataset.index, 10);
+  // ➖ Gestionar tarea
+document
+  .getElementById('tasks-manage')
+  ?.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    const i = parseInt(btn.dataset.index, 10);
+
+    // Editar tarea
+    if (btn.classList.contains('btn-edit')) {
+      const t = tasks[i];
+      const newName = prompt('Nuevo nombre de la tarea:', t.name);
+      if (newName) t.name = newName;
+      const newPts = prompt('Nuevos puntos:', t.points);
+      if (!isNaN(Number(newPts))) t.points = Number(newPts);
+      saveTasks();
+    }
+
+    // Eliminar tarea
+    if (btn.classList.contains('btn-danger')) {
       tasks.splice(i, 1);
       saveTasks();
-      renderTasks();
-      renderChildTasks();
-      updatePointDisplay();
     }
+
+    // Refresca UIs y puntos
+    renderTasksManage();
+    renderTasks();
+    renderChildTasks();
+    updatePointDisplay();
   });
 
   // ➕ Agregar recompensa
@@ -854,7 +918,7 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Eliminar recompensa
+  // ➖ Gestionar recompensa
   // 3) Delegación click en "Recompensas" para editar / eliminar
 document
   .getElementById('rewards-manage')
