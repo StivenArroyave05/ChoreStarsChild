@@ -909,9 +909,7 @@ button {
 }
 
 /* Gestión de listados (niños, tareas, recompensas) */
-#settings .settings-section ul,
-#settings .settings-section #tasks-manage,
-#settings .settings-section #rewards-manage {
+#settings .settings-section ul {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
