@@ -407,7 +407,7 @@ function renderTasks() {
     .filter(t => t.childId === activeChildId)         // ¡filtrar por niño!
     .forEach((t, i) => {
       c.innerHTML += `
-        <div class="task-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
+        <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
          <span>${t.name} (${t.points} pts)</span>
          <button class="btn-edit"   data-index="${i}">✏️</button>
          <button class="btn-danger" data-index="${i}">Eliminar</button>
