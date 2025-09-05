@@ -473,17 +473,85 @@ function renderChildTasks() {
     container.appendChild(card);
   });
 }
-
 function renderRewardsManage() {
   const c = document.getElementById('rewards-manage');
   if (!c) return;
   c.innerHTML = '';
+
   rewards.forEach((r, i) => {
-    c.innerHTML += `
-      <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
-        <span>${r.name} (${r.cost} pts)</span>
-        <button class="btn-danger" data-index="${i}">Eliminar</button>
-      </div>`;
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    // Contenido principal
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    content.innerHTML = `
+      <span class="card-title">${r.name}</span>
+      <small>Coste: ${r.cost} pts</small>
+    `;
+
+    // Acciones
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit';
+    editBtn.dataset.type = 'reward';
+    editBtn.dataset.index = i;
+    editBtn.textContent = '✏️';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-delete';
+    deleteBtn.dataset.type = 'reward';
+    deleteBtn.dataset.index = i;
+    deleteBtn.textContent = '🗑️';
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
+    card.appendChild(content);
+    card.appendChild(actions);
+    c.appendChild(card);
+  });
+}
+
+function renderTasksManage() {
+  const c = document.getElementById('tasks-manage');
+  if (!c) return;
+  c.innerHTML = '';
+
+  tasks.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    content.innerHTML = `
+      <span class="card-title">${t.name}</span>
+      <small>${t.points} pts</small>
+    `;
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit';
+    editBtn.dataset.type = 'task';
+    editBtn.dataset.index = i;
+    editBtn.textContent = '✏️';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-delete';
+    deleteBtn.dataset.type = 'task';
+    deleteBtn.dataset.index = i;
+    deleteBtn.textContent = '🗑️';
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
+    card.appendChild(content);
+    card.appendChild(actions);
+    c.appendChild(card);
   });
 }
 
@@ -710,6 +778,7 @@ window.addEventListener('DOMContentLoaded', () => {
   renderWeeklyHistory();
   renderTasks();
   renderChildTasks();
+  renderTasksManage();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
@@ -787,17 +856,6 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Eliminar tarea
-  document.getElementById('tasks-manage')?.addEventListener('click', e => {
-    if (e.target.matches('.btn-danger')) {
-      const i = parseInt(e.target.dataset.index, 10);
-      tasks.splice(i, 1);
-      saveTasks();
-      renderTasks();
-      renderChildTasks();
-      updatePointDisplay();
-    }
-  });
 
   // ➕ Agregar recompensa
   document.getElementById('add-reward')?.addEventListener('click', () => {
@@ -817,16 +875,52 @@ document
     updatePointDisplay();
   });
 
-  // ➖ Eliminar recompensa
-  document.getElementById('rewards-manage')?.addEventListener('click', e => {
-    if (e.target.matches('.btn-danger')) {
-      rewards.splice(parseInt(e.target.dataset.index, 10), 1);
-      saveRewards();
-      renderRewardsManage();
-      renderChildRewards();
-      updatePointDisplay();
+['tasks-manage', 'rewards-manage'].forEach(id => {
+  document.getElementById(id)?.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    const type  = btn.dataset.type;
+    const index = parseInt(btn.dataset.index, 10);
+
+    if (btn.classList.contains('btn-edit')) {
+      if (type === 'task') {
+        const t = tasks[index];
+        const newName = prompt('Nuevo nombre de la tarea:', t.name);
+        const newPts  = prompt('Nuevos puntos:', t.points);
+        if (newName) t.name = newName;
+        if (!isNaN(Number(newPts))) t.points = Number(newPts);
+        saveTasks();
+      } else {
+        const r = rewards[index];
+        const newName = prompt('Nuevo nombre de la recompensa:', r.name);
+        const newCost = prompt('Nuevo coste en puntos:', r.cost);
+        if (newName) r.name = newName;
+        if (!isNaN(Number(newCost))) r.cost = Number(newCost);
+        saveRewards();
+      }
     }
+
+    if (btn.classList.contains('btn-delete')) {
+      if (!confirm(`¿Eliminar esta ${type}?`)) return;
+      if (type === 'task') {
+        tasks.splice(index, 1);
+        saveTasks();
+      } else {
+        rewards.splice(index, 1);
+        saveRewards();
+      }
+    }
+
+    // Re-renderiza y actualiza puntos
+    renderTasksManage();
+    renderRewardsManage();
+    renderChildTasks();
+    renderChildRewards();
+    updatePointDisplay();
   });
+});
+
 
   // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
@@ -991,7 +1085,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
       flashMessage('Buscando actualizaciones…');
     });
 
-});
+}); // fin DOMContentLoaded
 
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
@@ -1006,157 +1100,3 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
-/**
- * Dispara la actualización del SW:
- * si ya hay uno en waiting lo activa,
- * sino lanza `registration.update()`
- */
-async function triggerServiceWorkerUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-
-  const registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) {
-    console.warn('No SW registration encontrada.');
-    return;
-  }
-
-  // Si ya hay un SW descargado y en waiting, lo activamos
-  if (registration.waiting) {
-    sendSkipWaiting(registration.waiting);
-  } else {
-    // Si no, buscamos nueva versión
-    registration.update();
-  }
-}
-
-// — 1) Carga inicial de datos desde localStorage —
-let tasks   = JSON.parse(localStorage.getItem('tasks')   || '[]');
-let rewards = JSON.parse(localStorage.getItem('rewards') || '[]');
-
-// — 2) Funciones de persistencia —
-function saveTasks()   { localStorage.setItem('tasks',   JSON.stringify(tasks)); }
-function saveRewards() { localStorage.setItem('rewards', JSON.stringify(rewards)); }
-
-// — 3) Renderizado de cards — 
-function renderTasksManage() {
-  const container = document.getElementById('tasks-manage');
-  if (!container) return;
-  container.innerHTML = '';
-
-  tasks.forEach((t, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-content">
-        <span class="card-title">${t.name}</span>
-        <small>${t.points} pts</small>
-      </div>
-      <div class="card-actions">
-        <button class="btn-edit"   data-type="task"   data-index="${i}">✏️</button>
-        <button class="btn-delete" data-type="task"   data-index="${i}">🗑️</button>
-      </div>`;
-    container.appendChild(card);
-  });
-}
-
-function renderRewardsManage() {
-  const container = document.getElementById('rewards-manage');
-  if (!container) return;
-  container.innerHTML = '';
-
-  rewards.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <div class="card-content">
-        <span class="card-title">${r.name}</span>
-        <small>Coste: ${r.cost} pts</small>
-      </div>
-      <div class="card-actions">
-        <button class="btn-edit"   data-type="reward" data-index="${i}">✏️</button>
-        <button class="btn-delete" data-type="reward" data-index="${i}">🗑️</button>
-      </div>`;
-    container.appendChild(card);
-  });
-}
-
-// — 4) Handlers para “Añadir” —
-function handleAddTask() {
-  const name = document.getElementById('new-task-name').value.trim();
-  const pts  = parseInt(document.getElementById('new-task-points').value, 10);
-  if (!name || isNaN(pts)) return alert('Ingresa nombre y puntos válidos');
-  tasks.push({ name, points: pts });
-  saveTasks();
-  renderTasksManage();
-}
-
-function handleAddReward() {
-  const name = document.getElementById('new-reward-name').value.trim();
-  const cost = parseInt(document.getElementById('new-reward-cost').value,   10);
-  if (!name || isNaN(cost)) return alert('Ingresa nombre y costo válidos');
-  rewards.push({ name, cost });
-  saveRewards();
-  renderRewardsManage();
-}
-
-// — 5) Delegación para ✏️ y 🗑️ —
-function handleSettingsClick(e) {
-  const btn  = e.target.closest('button');
-  if (!btn) return;
-  const type = btn.dataset.type;    // 'task' o 'reward'
-  const idx  = parseInt(btn.dataset.index, 10);
-
-  // Editar
-  if (btn.classList.contains('btn-edit')) {
-    if (type === 'task') {
-      const t = tasks[idx];
-      const newName = prompt('Nuevo nombre de la tarea:', t.name);
-      const newPts  = prompt('Nuevos puntos:', t.points);
-      if (newName)        t.name   = newName;
-      if (!isNaN(newPts)) t.points = Number(newPts);
-      saveTasks();
-    } else {
-      const r = rewards[idx];
-      const newName = prompt('Nuevo nombre de la recompensa:', r.name);
-      const newCost = prompt('Nuevo costo en puntos:', r.cost);
-      if (newName)        r.name = newName;
-      if (!isNaN(newCost)) r.cost = Number(newCost);
-      saveRewards();
-    }
-  }
-
-  // Eliminar
-  if (btn.classList.contains('btn-delete')) {
-    if (!confirm(`¿Eliminar esta ${type}?`)) return;
-    if (type === 'task') {
-      tasks.splice(idx, 1);
-      saveTasks();
-    } else {
-      rewards.splice(idx, 1);
-      saveRewards();
-    }
-  }
-
-  // Refresca ambas vistas y tus puntos
-  renderTasksManage();
-  renderRewardsManage();
-  updatePointDisplay();   // tu función ya existente
-}
-
-// — 6) Inicialización de eventos y primer render —
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('add-task')?.addEventListener('click',   handleAddTask);
-  document.getElementById('add-reward')?.addEventListener('click', handleAddReward);
-
-  document
-    .getElementById('tasks-manage')
-    ?.addEventListener('click', handleSettingsClick);
-
-  document
-    .getElementById('rewards-manage')
-    ?.addEventListener('click', handleSettingsClick);
-
-  renderTasksManage();
-  renderRewardsManage();
-});

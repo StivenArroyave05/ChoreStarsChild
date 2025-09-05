@@ -955,10 +955,6 @@ button {
 }
 
 
-/* --------------------------------------------------
-   GRID y CARD para sección de configuración
-   -------------------------------------------------- */
-
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -973,12 +969,6 @@ button {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
 .card-content {
@@ -986,8 +976,8 @@ button {
 }
 
 .card-title {
-  font-size: 1.1rem;
   font-weight: 600;
+  font-size: 1.1rem;
   margin-bottom: .5rem;
 }
 
@@ -997,7 +987,10 @@ button {
   gap: .5rem;
 }
 
-.card-actions .btn {
-  padding: 0.4rem .75rem;
-  font-size: .875rem;
+.btn-edit,
+.btn-delete {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
 }
