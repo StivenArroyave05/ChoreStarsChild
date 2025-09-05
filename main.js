@@ -975,30 +975,23 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
     });
   }
 
-// Obtenemos el botón y, si existe, le añadimos el listener
-const installBtn = document.getElementById('install-updates');
-if (installBtn) {
-  installBtn.addEventListener('click', async () => {
-    // 1) Buscamos la registration del SW
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (!registration) {
-      console.warn('No hay SW registrado.');
-      return;
-    }
+  // ➕ Evento para tu botón “Instalar actualizaciones”
+  document
+    .getElementById('install-updates')
+    ?.addEventListener('click', async () => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return console.warn('No hay SW registrado.');
+      // Si ya hubo un SW precargado y waiting → skip
+      if (registration.waiting) {
+        sendSkipWaiting(registration.waiting);
+      } else {
+        // Sino, fuerza la búsqueda de una nueva versión
+        registration.update();
+      }
+      flashMessage('Buscando actualizaciones…');
+    });
 
-    // 2) Si ya hay un SW en waiting, lo activamos con skipWaiting
-    if (registration.waiting) {
-      sendSkipWaiting(registration.waiting);
-
-    // 3) Si no, forzamos la comprobación de nueva versión
-    } else {
-      registration.update();
-    }
-
-    // 4) Feedback al usuario
-    flashMessage('Buscando actualizaciones…');
-  });
-}
+});
 
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
