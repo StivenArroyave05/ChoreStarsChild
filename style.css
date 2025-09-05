@@ -964,3 +964,72 @@ button {
 #settings .settings-section .flex .btn {
   flex-shrink: 0;        /* mantiene su ancho y no envuelve */
 }
+
+
+/* ────────────────────────────────────────────────────────────
+   Cards de Tareas/Recompensas en Configuración: fila | Nombre | Puntos | Acciones
+──────────────────────────────────────────────────────────────── */
+
+/* Contenedor de cards dentro de Settings */
+#settings .settings-section .cards-grid .card {
+  /* Fila con espacio entre los tres bloques */
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+/* Zona izquierda: nombre de tarea/recompensa */
+#settings .settings-section .cards-grid .card-content {
+  display: flex;
+  align-items: center;
+  flex: 1;                   /* ocupa todo el espacio disponible */
+  gap: 0.75rem;              /* espacio entre nombre y puntos */
+  white-space: normal;       /* permite texto multilínea si es muy largo */
+}
+
+/* Título */
+#settings .settings-section .cards-grid .card-title {
+  flex: 1;                   /* permite que el nombre se expanda */
+  text-align: left;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Puntos: zona central, no encoge */
+#settings .settings-section .cards-grid .card-content small {
+  flex-shrink: 0;
+  color: #4b5563;            /* gris oscuro para contraste */
+}
+
+/* Zona derecha: botones, ya estaban centrados */
+#settings .settings-section .cards-grid .card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Mobile y tablets: apilamos verticalmente si hace falta */
+@media (max-width: 600px) {
+  #settings .settings-section .cards-grid .card {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  #settings .settings-section .cards-grid .card-content {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  #settings .settings-section .cards-grid .card-title {
+    margin-bottom: 0.5rem;
+  }
+
+  #settings .settings-section .cards-grid .card-actions {
+    justify-content: center;
+    margin-top: 0.75rem;
+  }
+}
