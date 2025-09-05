@@ -936,38 +936,3 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   }
  
   });
-
-const CACHE_NAME = 'v1';
-const assets = [
-  '/', 
-  '/index.html',
-  '/main.js',
-  '/style.css',
-  // NO pongas aquí fonts.googleapis.com
-];
-const fontCss = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap';
-
-self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-
-    // 1) Cachea tus ficheros del dominio
-    await Promise.all(
-      assets.map(path =>
-        fetch(path).then(res => cache.put(path, res))
-      )
-    );
-
-    // 2) Si quieres cachear el CSS de Google Fonts como respuesta opaca
-    try {
-      const req = new Request(fontCss, { mode: 'no-cors' });
-      const res = await fetch(req);
-      await cache.put(fontCss, res);
-    } catch (err) {
-      console.warn('No se pudo cachear Google Fonts:', err);
-    }
-
-    self.skipWaiting();
-  })());
-});
-
