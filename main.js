@@ -790,6 +790,10 @@ document
     renderTasks();
     renderChildTasks();
     updatePointDisplay();
+
+  // Limpia campos
+  nameInput.value = '';
+  costInput.value = '';
   });
 
 
@@ -842,6 +846,10 @@ document
     renderRewardsManage();
     renderChildRewards();
     updatePointDisplay();
+
+  // Limpia campos
+  nameInput.value = '';
+  costInput.value = '';
   });
 
 
