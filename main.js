@@ -937,40 +937,37 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
  
   });
 
-const CACHE_NAME = 'chorestars-v1';
-// pon aquí tu array original:
+const CACHE_NAME = 'v1';
 const assets = [
   '/', 
   '/index.html',
   '/main.js',
   '/style.css',
-  '/manifest.json',
-  '/service-worker.js',
-  '/assets/logo.png',
-  // …etc
+  // NO pongas aquí fonts.googleapis.com
 ];
+const fontCss = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return Promise.all(
-          assets.map(url =>
-            fetch(url)
-              .then(res => {
-                if (!res.ok) {
-                  console.warn(`📁 Cache fallo [${res.status}] en: ${url}`);
-                  return;
-                }
-                return cache.put(url, res);
-              })
-              .catch(err => {
-                console.error(`⚠️ Fetch error en ${url}:`, err);
-              })
-          )
-        );
-      })
-      .then(() => self.skipWaiting())  // fuerza a activar el SW aunque algo falle
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+
+    // 1) Cachea tus ficheros del dominio
+    await Promise.all(
+      assets.map(path =>
+        fetch(path).then(res => cache.put(path, res))
+      )
+    );
+
+    // 2) Si quieres cachear el CSS de Google Fonts como respuesta opaca
+    try {
+      const req = new Request(fontCss, { mode: 'no-cors' });
+      const res = await fetch(req);
+      await cache.put(fontCss, res);
+    } catch (err) {
+      console.warn('No se pudo cachear Google Fonts:', err);
+    }
+
+    self.skipWaiting();
+  })());
 });
 
