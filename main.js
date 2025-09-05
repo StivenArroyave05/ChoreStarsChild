@@ -856,7 +856,6 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   saveTasks();
   renderTasks();
   renderChildTasks();
-  renderTasksManage(); // ✅ actualiza cards en configuración
   updatePointDisplay();
 
   // ✅ Limpieza de campos
@@ -886,6 +885,7 @@ document.getElementById('add-reward')?.addEventListener('click', () => {
   nameInput.value = '';
   costInput.value = '';
 });
+
 
 ['tasks-manage', 'rewards-manage'].forEach(id => {
   document.getElementById(id)?.addEventListener('click', e => {
