@@ -70,3 +70,25 @@ self.addEventListener('fetch', event => {
   // 3) Otros terceros → network-only (sin caching) o puedes añadir otro fallback
   event.respondWith(fetch(event.request));
 });
+
+// Al recibir un mensaje desde la página
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    // Fuerza al SW a activarse y reemplazar al actual
+    self.skipWaiting();
+  }
+});
+
+// En tu 'activate', asegúrate de reclamar clientes
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    // Limpia cachés antiguas si hace falta…
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE_STATIC && key !== CACHE_RUNTIME)
+          .map(key => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())  // Toma control inmediato de las páginas
+  );
+});
