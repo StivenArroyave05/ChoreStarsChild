@@ -22,6 +22,29 @@ let activeChildId = children[0]?.id || null;
 ////////////////////////////////////////////////////////////////////////////////
 // 0. Funciones para renderizar y cambiar de niño activo
 ////////////////////////////////////////////////////////////////////////////////
+/**
+ * Actualiza el nombre del niño activo en el header
+ */
+function updateHeaderName() {
+  const label = document.getElementById('child-name-label');
+  const child = children.find(c => c.id === activeChildId);
+  if (label) label.textContent = child ? child.name : '';
+}
+
+/**
+ * Actualiza la fecha “Hoy es:” en el header de tareas
+ */
+function updateTodayHeader() {
+  const el = document.getElementById('today-header');
+  if (!el) return;
+  const now   = new Date();
+  const date  = now.toLocaleDateString('es-CO', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+  el.textContent = `Hoy es: ${date}`;
+}
+
+
 function renderChildrenList() {
   const ul = document.getElementById('children-list');
   if (!ul) return;
@@ -72,6 +95,7 @@ function selectChild(id) {
 
   // actualiza subtítulo en el header
   updateHeaderName();
+  updateTodayHeader();
 
   // refresca historial del niño activo
   renderWeeklyHistory();
@@ -240,25 +264,6 @@ function getWeekStart(date) {
   d.setDate(d.getDate() - dayIndex);
   d.setHours(0, 0, 0, 0);
   return d;
-}
-
-/**
- * Actualiza el <div id="today-header"> con la fecha y hora actuales,
- * formateadas al locale 'es-CO' (ajústalo a tu preferencia).
- */
-function updateDateTime() {
-  const el = document.getElementById('today-header');
-  if (!el) return;
-
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('es-CO', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-  });
-  const timeStr = now.toLocaleTimeString('es-CO', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  });
-
-  el.textContent = `${dateStr} • ${timeStr}`;
 }
 
 
@@ -696,8 +701,8 @@ function showTab(tabId) {
 window.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 DOM cargado, inicializando app');
 
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
+  updateHeaderName();
+  updateTodayHeader();
   renderChildrenList();
   renderChildTabs();
   applyDailyPenalties();
