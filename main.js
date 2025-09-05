@@ -870,6 +870,7 @@ document
 
     rewards.push({ name, cost });
     saveRewards();
+    renderTasksManage();
     renderRewardsManage();
     renderChildRewards();
     updatePointDisplay();
@@ -962,6 +963,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   // F) Refresca UI
   renderTasks();
   renderChildTasks();
+  renderTasksManage();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
