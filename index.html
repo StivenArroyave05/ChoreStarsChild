@@ -208,73 +208,61 @@
     </div>
   </div>
 
-  <!-- 🌟 Gestión de tareas -->
-  <div class="settings-section">
-    <label
-      for="new-task-name"
-      class="font-semibold text-lg block mb-2"
-    >
-      📝 Gestión de tareas
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="new-task-name"
-        type="text"
-        class="input flex-1"
-        placeholder="Nombre de la tarea"
-      />
-      <input
-        id="new-task-points"
-        type="number"
-        class="input w-24"
-        placeholder="Puntos"
-      />
-      <button
-        id="add-task"
-        class="btn btn-success"
-      >
-        Añadir tarea
-      </button>
-    </div>
-    <div
-      id="tasks-manage"
-      class="flex flex-col gap-2 mt-4"
-    ></div>
+<!-- 🌟 Gestión de tareas -->
+<div class="settings-section">
+  <label for="new-task-name" class="font-semibold text-lg block mb-2">
+    📝 Gestión de tareas
+  </label>
+  <div class="flex gap-2 items-center">
+    <input
+      id="new-task-name"
+      type="text"
+      class="input flex-1"
+      placeholder="Nombre de la tarea"
+    />
+    <input
+      id="new-task-points"
+      type="number"
+      class="input w-24"
+      placeholder="Puntos"
+    />
+    <button id="add-task" class="btn btn-success">
+      Añadir tarea
+    </button>
   </div>
+  <div
+    id="tasks-manage"
+    class="cards-grid mt-4"
+  ></div>
+</div>
 
-  <!-- 🌟 Gestión de recompensas -->
-  <div class="settings-section">
-    <label
-      for="new-reward-name"
-      class="font-semibold text-lg block mb-2"
-    >
-      🎁 Gestión de recompensas
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="new-reward-name"
-        type="text"
-        class="input flex-1"
-        placeholder="Nombre de la recompensa"
-      />
-      <input
-        id="new-reward-cost"
-        type="number"
-        class="input w-24"
-        placeholder="Costo"
-      />
-      <button
-        id="add-reward"
-        class="btn btn-warning"
-      >
-        Añadir recompensa
-      </button>
-    </div>
-    <div
-      id="rewards-manage"
-      class="flex flex-col gap-2 mt-4"
-    ></div>
+<!-- 🌟 Gestión de recompensas -->
+<div class="settings-section">
+  <label for="new-reward-name" class="font-semibold text-lg block mb-2">
+    🎁 Gestión de recompensas
+  </label>
+  <div class="flex gap-2 items-center">
+    <input
+      id="new-reward-name"
+      type="text"
+      class="input flex-1"
+      placeholder="Nombre de la recompensa"
+    />
+    <input
+      id="new-reward-cost"
+      type="number"
+      class="input w-24"
+      placeholder="Costo"
+    />
+    <button id="add-reward" class="btn btn-warning">
+      Añadir recompensa
+    </button>
   </div>
+  <div
+    id="rewards-manage"
+    class="cards-grid mt-4"
+  ></div>
+</div>
 
   <!-- 🌟 Cerrar semana -->
   <div class="settings-section">

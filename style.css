@@ -953,3 +953,51 @@ button {
 #settings .settings-section .flex .btn {
   flex-shrink: 0;        /* mantiene su ancho y no envuelve */
 }
+
+
+/* --------------------------------------------------
+   GRID y CARD para sección de configuración
+   -------------------------------------------------- */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.card-content {
+  margin-bottom: .75rem;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: .5rem;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+.card-actions .btn {
+  padding: 0.4rem .75rem;
+  font-size: .875rem;
+}

@@ -474,68 +474,105 @@ function renderChildTasks() {
   });
 }
 
+// 1) Render en “settings” con cards y botones de editar/eliminar
 function renderRewardsManage() {
-  const c = document.getElementById('rewards-manage');
-  if (!c) return;
-  c.innerHTML = '';
+  const container = document.getElementById('rewards-manage');
+  if (!container) return;
+  container.innerHTML = '';
+
   rewards.forEach((r, i) => {
-    c.innerHTML += `
-      <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
-        <span>${r.name} (${r.cost} pts)</span>
-        <button class="btn-danger" data-index="${i}">Eliminar</button>
-      </div>`;
+    // Card wrapper
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    // Contenido
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    content.innerHTML = `
+      <span class="card-title">${r.name}</span>
+      <small>Coste: ${r.cost} pts</small>
+    `;
+
+    // Acciones
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    // Editar
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-sm btn-edit';
+    editBtn.dataset.index = i;
+    editBtn.textContent = '✏️';
+    actions.appendChild(editBtn);
+
+    // Eliminar
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger';
+    delBtn.dataset.index = i;
+    delBtn.textContent = '🗑️';
+    actions.appendChild(delBtn);
+
+    // Ensamblar
+    card.appendChild(content);
+    card.appendChild(actions);
+    container.appendChild(card);
   });
 }
 
+
+// 2) Render para el niño, también como cards y manteniendo share/canjear
 function renderChildRewards() {
-  const c = document.getElementById('rewards-list');
-  if (!c) return;
-  c.innerHTML = '';
+  const container = document.getElementById('rewards-list');
+  if (!container) return;
+  container.innerHTML = '';
 
   rewards.forEach((r, i) => {
-    const block = document.createElement('div');
-    block.className = 'reward-block';
+    const card = document.createElement('div');
+    card.className = 'card';
+    if (r.redeemed) card.classList.add('redeemed');
 
-    // Si ya fue canjeada, le añadimos el modifier
+    // Card content
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    const title = document.createElement('span');
+    title.className = 'card-title';
+    title.textContent = r.name;
+    const cost = document.createElement('small');
+    cost.textContent = `${r.cost} pts`;
+    content.append(title, cost);
+
+    // Card actions
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
     if (r.redeemed) {
-      block.classList.add('redeemed');
-    }
-
-    // Nombre y costo
-    const span = document.createElement('span');
-    span.textContent = `${r.name} (${r.cost} pts)`;
-
-    block.appendChild(span);
-
-    if (r.redeemed) {
-      // Etiqueta “Canjeada por [Niño]”
+      // Label “Canjeada por…”
       const child = children.find(c => c.id === r.redeemedBy);
       const label = document.createElement('span');
-      label.className = 'text-green-800 ml-4';
+      label.className = 'text-green-800';
       label.textContent = `Canjeada por ${child?.name || 'alguien'}`;
-      block.appendChild(label);
+      actions.appendChild(label);
 
-      // Botón Compartir siempre visible
+      // Botón Compartir
       const shareBtn = document.createElement('button');
-      shareBtn.className   = 'share-btn';
+      shareBtn.className = 'btn btn-sm share-btn';
       shareBtn.textContent = 'Compartir';
       shareBtn.addEventListener('click', () => shareReward(r.name));
-      block.appendChild(shareBtn);
+      actions.appendChild(shareBtn);
 
     } else {
       // Botón Canjear
-      const btn = document.createElement('button');
-      btn.className     = 'btn-primary';
-      btn.textContent   = 'Canjear';
-      btn.dataset.index = i;
-      btn.addEventListener('click', () => handleRewardRedemption(i));
-      block.appendChild(btn);
+      const redeemBtn = document.createElement('button');
+      redeemBtn.className = 'btn btn-sm btn-primary';
+      redeemBtn.textContent = 'Canjear';
+      redeemBtn.dataset.index = i;
+      redeemBtn.addEventListener('click', () => handleRewardRedemption(i));
+      actions.appendChild(redeemBtn);
     }
 
-    c.appendChild(block);
+    card.append(content, actions);
+    container.appendChild(card);
   });
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // 9. Canje de recompensas
@@ -818,14 +855,35 @@ document
   });
 
   // ➖ Eliminar recompensa
-  document.getElementById('rewards-manage')?.addEventListener('click', e => {
-    if (e.target.matches('.btn-danger')) {
-      rewards.splice(parseInt(e.target.dataset.index, 10), 1);
+  // 3) Delegación click en "Recompensas" para editar / eliminar
+document
+  .getElementById('rewards-manage')
+  ?.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    const i = parseInt(btn.dataset.index, 10);
+
+    // Editar
+    if (btn.classList.contains('btn-edit')) {
+      const r = rewards[i];
+      const newName = prompt('Nuevo nombre de la recompensa:', r.name);
+      if (newName) r.name = newName;
+      const newCost = prompt('Nuevo coste en puntos:', r.cost);
+      if (!isNaN(Number(newCost))) r.cost = Number(newCost);
       saveRewards();
-      renderRewardsManage();
-      renderChildRewards();
-      updatePointDisplay();
     }
+
+    // Eliminar
+    if (btn.classList.contains('btn-danger')) {
+      rewards.splice(i, 1);
+      saveRewards();
+    }
+
+    // Siempre re-renderizar y actualizar puntos
+    renderRewardsManage();
+    renderChildRewards();
+    updatePointDisplay();
   });
 
   // 🔄 Cerrar semana
@@ -991,7 +1049,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
       flashMessage('Buscando actualizaciones…');
     });
 
-});
+}); // fin DOMContentLoaded
 
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
@@ -1005,27 +1063,4 @@ function sendSkipWaiting(worker) {
       window.location.reload();
     }
   });
-}
-
-/**
- * Dispara la actualización del SW:
- * si ya hay uno en waiting lo activa,
- * sino lanza `registration.update()`
- */
-async function triggerServiceWorkerUpdate() {
-  if (!('serviceWorker' in navigator)) return;
-
-  const registration = await navigator.serviceWorker.getRegistration();
-  if (!registration) {
-    console.warn('No SW registration encontrada.');
-    return;
-  }
-
-  // Si ya hay un SW descargado y en waiting, lo activamos
-  if (registration.waiting) {
-    sendSkipWaiting(registration.waiting);
-  } else {
-    // Si no, buscamos nueva versión
-    registration.update();
-  }
 }
