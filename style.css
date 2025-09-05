@@ -909,7 +909,9 @@ button {
 }
 
 /* Gestión de listados (niños, tareas, recompensas) */
-#settings .settings-section ul {
+#settings .settings-section ul,
+#settings .settings-section #tasks-manage,
+#settings .settings-section #rewards-manage {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -950,45 +952,4 @@ button {
 /* Evitar que el botón se encoja o envuelva */
 #settings .settings-section .flex .btn {
   flex-shrink: 0;        /* mantiene su ancho y no envuelve */
-}
-
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
-}
-
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card-content {
-  margin-bottom: .75rem;
-}
-
-.card-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: .5rem;
-}
-
-.card-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: .5rem;
-}
-
-.btn-edit,
-.btn-delete {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
 }

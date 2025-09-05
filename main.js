@@ -399,30 +399,23 @@ function shareReward(rewardName) {
 ////////////////////////////////////////////////////////////////////////////////
 // 8. Renderizado de listas
 ////////////////////////////////////////////////////////////////////////////////
-+ /**
-+  * Renderiza la lista de tareas en Configuración como cards con editar/borrar
-+  */
-+ function renderTasksManage() {
-+   const c = document.getElementById('tasks-manage');
-+   if (!c) return;
-+   c.innerHTML = '';
-+
-+   tasks
-+     .filter(t => t.childId === activeChildId)
-+     .forEach((t, i) => {
-+       c.innerHTML += `
-+         <div class="card">
-+           <div class="card-content">
-+             <span class="card-title">${t.name}</span>
-+             <small>${t.points} pts</small>
-+           </div>
-+           <div class="card-actions">
-+             <button class="btn-edit"   data-type="task"   data-index="${i}">✏️</button>
-+             <button class="btn-delete" data-type="task"   data-index="${i}">🗑️</button>
-+           </div>
-+         </div>`;
-+     });
-+ }
+function renderTasks() {
+  const c = document.getElementById('tasks-manage');
+  if (!c) return;
+  c.innerHTML = '';
+  tasks
+    .filter(t => t.childId === activeChildId)         // ¡filtrar por niño!
+    .forEach((t, i) => {
+      c.innerHTML += `
+        <div class="task-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
+         <span>${t.name} (${t.points} pts)</span>
+         <button class="btn-edit"   data-index="${i}">✏️</button>
+         <button class="btn-danger" data-index="${i}">Eliminar</button>
+        </div>`;
+
+    });
+}
+
 /**
  * Renderiza las tareas del niño activo dentro de #tasks-list
  */
@@ -483,28 +476,21 @@ function renderChildTasks() {
   });
 }
 
-+ /**
-+  * Renderiza la lista de recompensas en Configuración como cards con editar/borrar
-+  */
-+ function renderRewardsManage() {
-+   const c = document.getElementById('rewards-manage');
-+   if (!c) return;
-+   c.innerHTML = '';
-+
-+   rewards.forEach((r, i) => {
-+     c.innerHTML += `
-+       <div class="card">
-+         <div class="card-content">
-+           <span class="card-title">${r.name}</span>
-+           <small>Coste: ${r.cost} pts</small>
-+         </div>
-+         <div class="card-actions">
-+           <button class="btn-edit"   data-type="reward" data-index="${i}">✏️</button>
-+           <button class="btn-delete" data-type="reward" data-index="${i}">🗑️</button>
-+         </div>
-+       </div>`;
-+   });
-+ }
+function renderRewardsManage() {
+  const c = document.getElementById('rewards-manage');
+  if (!c) return;
+  c.innerHTML = '';
+  rewards.forEach((r, i) => {
+    c.innerHTML += `
+     <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
+      <span>${r.name} (${r.cost} pts)</span>
+      <button class="btn-edit"   data-index="${i}">✏️</button>
+      <button class="btn-danger" data-index="${i}">Eliminar</button>
+     </div>`;
+
+
+  });
+}
 
 function renderChildRewards() {
   const c = document.getElementById('rewards-list');
@@ -727,7 +713,7 @@ window.addEventListener('DOMContentLoaded', () => {
   applyDailyPenalties();
   renderWeekStart();
   renderWeeklyHistory();
-+ renderTasksManage();
+  renderTasks();
   renderChildTasks();
   renderRewardsManage();
   renderChildRewards();
@@ -801,15 +787,44 @@ document
       childId: activeChildId   // **importante**
     });
     saveTasks();
-+   renderTasksManage();
-+   renderChildTasks();
+    renderTasks();
+    renderChildTasks();
     updatePointDisplay();
-
-+   // Limpiar inputs
-+   nameInput.value = '';
-+   ptsInput.value  = '';
   });
 
+
+  document.getElementById('tasks-manage')?.addEventListener('click', e => {
+  // — Editar tarea —
+  if (e.target.matches('.btn-edit')) {
+    const i = parseInt(e.target.dataset.index, 10);
+    // Filtro la lista visible para mapear índices correctos
+    const visible = tasks.filter(t => t.childId === activeChildId);
+    const task    = visible[i];
+    const newName = prompt('Nuevo nombre de la tarea:', task.name);
+    if (newName) {
+      task.name = newName;
+      const newPts = prompt('Nuevos puntos:', task.points);
+      if (!isNaN(parseInt(newPts,10))) {
+        task.points = parseInt(newPts,10);
+      }
+      saveTasks();
+      renderTasks();      // refresca Configuración
+      renderChildTasks(); // refresca Tasks del niño
+      updatePointDisplay();
+    }
+    return;
+  }
+
+  // ➖ Eliminar tarea
+    if (e.target.matches('.btn-danger')) {
+      const i = parseInt(e.target.dataset.index, 10);
+      tasks.splice(i, 1);
+      saveTasks();
+      renderTasks();
+      renderChildTasks();
+      updatePointDisplay();
+    }
+  });
 
   // ➕ Agregar recompensa
   document.getElementById('add-reward')?.addEventListener('click', () => {
@@ -827,61 +842,38 @@ document
     renderRewardsManage();
     renderChildRewards();
     updatePointDisplay();
-
-+  // Limpiar inputs
-+  nameInput.value = '';
-+  costInput.value = '';
   });
 
-+ ['tasks-manage','rewards-manage'].forEach(id => {
-+   document.getElementById(id)?.addEventListener('click', e => {
-+     const btn   = e.target.closest('button');
-+     if (!btn) return;
-+
-+     const type  = btn.dataset.type;            // 'task' o 'reward'
-+     const index = parseInt(btn.dataset.index, 10);
-+
-+     // ✏️ Editar
-+     if (btn.classList.contains('btn-edit')) {
-+       if (type === 'task') {
-+         const item = tasks.filter(t => t.childId === activeChildId)[index];
-+         const newName = prompt('Nuevo nombre de la tarea:', item.name);
-+         const newPts  = prompt('Nuevos puntos:', item.points);
-+         if (newName) item.name   = newName;
-+         if (!isNaN(Number(newPts))) item.points = Number(newPts);
-+         saveTasks();
-+       } else {
-+         const item = rewards[index];
-+         const newName = prompt('Nuevo nombre de la recompensa:', item.name);
-+         const newCost = prompt('Nuevo coste en puntos:', item.cost);
-+         if (newName) item.name = newName;
-+         if (!isNaN(Number(newCost))) item.cost = Number(newCost);
-+         saveRewards();
-+       }
-+     }
-+
-+     // 🗑️ Borrar
-+     if (btn.classList.contains('btn-delete')) {
-+       if (!confirm(`¿Eliminar este ${type}?`)) return;
-+       if (type === 'task') {
-+         const filtered = tasks.filter(t => t.childId === activeChildId);
-+         const realIdx  = tasks.findIndex(t => t === filtered[index]);
-+         tasks.splice(realIdx, 1);
-+         saveTasks();
-+       } else {
-+         rewards.splice(index, 1);
-+         saveRewards();
-+       }
-+     }
-+
-+     // Re-renderizar
-+     renderTasksManage();
-+     renderRewardsManage();
-+     renderChildTasks();
-+     renderChildRewards();
-+     updatePointDisplay();
-+   });
-+ });
+
+  document.getElementById('rewards-manage')?.addEventListener('click', e => {
+  // — editar recompensa —
+  if (e.target.matches('.btn-edit')) {
+    const i = parseInt(e.target.dataset.index, 10);
+    const reward = rewards[i];
+    const newName = prompt('Nuevo nombre de la recompensa:', reward.name);
+    if (newName) {
+      reward.name = newName;
+      const newCost = prompt('Nuevo coste en puntos:', reward.cost);
+      if (!isNaN(parseInt(newCost,10))) {
+        reward.cost = parseInt(newCost,10);
+      }
+      saveRewards();
+      renderRewardsManage();  // refresca Configuración
+      renderChildRewards();   // refresca Rewards del niño
+      updatePointDisplay();
+    }
+    return;
+  }
+
+  // ➖ Eliminar recompensa
+    if (e.target.matches('.btn-danger')) {
+      rewards.splice(parseInt(e.target.dataset.index, 10), 1);
+      saveRewards();
+      renderRewardsManage();
+      renderChildRewards();
+      updatePointDisplay();
+    }
+  });
 
   // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
