@@ -929,8 +929,48 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
 
   // 🚀 Service Worker PWA
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker
+      .register('/service-worker.js')  // ruta relativa, sin “/”
       .then(() => console.log('✅ SW registrado'))
       .catch(err => console.error('❌ SW error', err));
   }
+ 
+  });
+
+const CACHE_NAME = 'chorestars-v1';
+// pon aquí tu array original:
+const assets = [
+  '/', 
+  '/index.html',
+  '/main.js',
+  '/style.css',
+  '/manifest.json',
+  '/service-worker.js',
+  '/assets/logo.png',
+  // …etc
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return Promise.all(
+          assets.map(url =>
+            fetch(url)
+              .then(res => {
+                if (!res.ok) {
+                  console.warn(`📁 Cache fallo [${res.status}] en: ${url}`);
+                  return;
+                }
+                return cache.put(url, res);
+              })
+              .catch(err => {
+                console.error(`⚠️ Fetch error en ${url}:`, err);
+              })
+          )
+        );
+      })
+      .then(() => self.skipWaiting())  // fuerza a activar el SW aunque algo falle
+  );
 });
+
