@@ -849,91 +849,102 @@ button {
 
 
 /* ────────────────────────────────────────────────────────────
-   Card modernizado para secciones de Configuración
+   Sección de Configuración: centrado y responsividad total
 ──────────────────────────────────────────────────────────────── */
+
+/* Contenedor de cada sección (Tareas, Recompensas, Niños, etc.) */
 #settings .settings-section {
-  background: #ffffff;                        
-  border-radius: 0.75rem;                     /* bordes más redondos */
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);     /* sombra suave y profunda */
-  padding: 1.5rem;                            
-  margin-bottom: 1.5rem;                     
-  border: none;                               /* eliminamos el borde lateral */
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  margin: 0 auto 1.5rem;         /* centrado horizontal y separación */
+  max-width: 800px;              /* evita que sea demasiado ancho en PC */
+  display: flex;
+  flex-direction: column;
+  align-items: center;           /* centra todo el contenido */
+  text-align: center;            /* centra textos e inputs */
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 #settings .settings-section:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
-/* Título de cada sección (primer label) */
+/* Título de sección */
 #settings .settings-section > label:first-child {
   display: block;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2563eb;                             /* color acento */
+  color: #2563eb;
   margin-bottom: 1rem;
   text-transform: uppercase;
 }
 
-/* Contenedor de inputs + botón en línea */
+/* Wrapper de inputs + botón: ahora centrado */
 #settings .settings-section .flex {
   display: flex;
+  justify-content: center;       /* centra controles */
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;                            /* para que baje si es muy estrecho */
-  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 1.25rem;
 }
 
-/* Inputs con estilo consistente */
+/* Inputs ajustados para responsividad */
 #settings .settings-section .input {
-  flex: 1;
+  flex: 1 1 200px;               /* crece y encoge según espacio */
   min-width: 120px;
-  padding: 0.5rem 0.75rem;                    
-  border: 1px solid #cbd5e1;                 /* gris suave */
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
   border-radius: 0.375rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 #settings .settings-section .input:focus {
   outline: none;
-  border-color: #2563eb;                     
+  border-color: #2563eb;
   box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
 }
 
-/* Botones tamaño y espaciado uniforme */
+/* Botones uniformes y no se encogen */
 #settings .settings-section .btn {
+  flex-shrink: 0;
   white-space: nowrap;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
 
-/* Gestión de listados (niños, tareas, recompensas) */
-#settings .settings-section ul,
+/* Listados de tareas/recompensas: grid responsivo */
 #settings .settings-section #tasks-manage,
 #settings .settings-section #rewards-manage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Si prefieres etiquetar listas <ul> de otros elementos sigue como flex-col */
+#settings .settings-section ul {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
 }
 
-/* Entrada de listado inline (opcional tags) */
-#settings .settings-section ul li {
-  background: #f3f4f6;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Ajuste responsive: en pantallas muy estrechas bajan en columna */
+/* Ajuste extra para mobile (<480px) */
 @media (max-width: 480px) {
+  #settings .settings-section {
+    padding: 1rem;
+  }
   #settings .settings-section .flex {
     flex-direction: column;
+    gap: 0.75rem;
   }
 }
-
 
 /* ────────────────────────────────────────────────────────────
    Evitar que el botón baje de línea en .settings-section .flex

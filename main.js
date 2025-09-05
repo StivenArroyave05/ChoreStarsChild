@@ -849,7 +849,7 @@ document
 
   // Limpia campos
   nameInput.value = '';
-  costInput.value = '';
+  costInput.value = '1';
   });
 
 
