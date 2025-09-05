@@ -1,0 +1,587 @@
+// main.js
+
+import './style.css';
+import { t } from './i18n.js';
+
+////////////////////////////////////////////////////////////////////////////////
+// 1. Estado global y valores por defecto
+////////////////////////////////////////////////////////////////////////////////
+function getDefaultStats() {
+  return {
+    earned:    0,
+    lost:      0,
+    redeemed:  0,
+    timestamp: new Date().toISOString()
+  };
+}
+
+let weeklyStats   = JSON.parse(localStorage.getItem('weeklyStats'))   || getDefaultStats();
+let tasks         = JSON.parse(localStorage.getItem('tasks'))         || [];
+let rewards       = JSON.parse(localStorage.getItem('rewards'))       || [];
+let weeklyHistory = JSON.parse(localStorage.getItem('weeklyHistory')) || [];
+let badges        = [];
+
+////////////////////////////////////////////////////////////////////////////////
+// 2. Persistencia en localStorage
+////////////////////////////////////////////////////////////////////////////////
+const saveStats   = () => localStorage.setItem('weeklyStats',   JSON.stringify(weeklyStats));
+const saveTasks   = () => localStorage.setItem('tasks',         JSON.stringify(tasks));
+const saveRewards = () => localStorage.setItem('rewards',       JSON.stringify(rewards));
+const saveHistory = () => localStorage.setItem('weeklyHistory', JSON.stringify(weeklyHistory));
+
+////////////////////////////////////////////////////////////////////////////////
+// 3. Insignias (badges)
+////////////////////////////////////////////////////////////////////////////////
+function generateBadges() {
+  badges = [];
+  if (weeklyStats.earned   >=  300) badges.push({ icon: '🥇', label: 'Esfuerzo constante',    bonus: 30 });
+  if (weeklyStats.redeemed >  800) badges.push({ icon: '🚀', label: 'Explorador recompensas', bonus: 50 });
+  if (weeklyStats.lost === 0 && weeklyStats.earned > 800)
+    badges.push({ icon: '🧠', label: 'Disciplina total',       bonus: 100 });
+}
+
+function renderBadges() {
+  const c = document.getElementById('badge-list');
+  if (!c) return;
+  c.innerHTML = '';
+  badges.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'badge-card flex items-center space-x-3 bg-yellow-50 p-3 rounded shadow-md mb-2';
+    card.innerHTML = `
+      <span style="font-size:2.2rem">${b.icon}</span>
+      <div>
+        <strong>${b.label}</strong><br>
+        <span class="text-sm text-gray-600">+${b.bonus} ⭐</span>
+      </div>`;
+    c.appendChild(card);
+  });
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 4. Barra de progreso y puntos
+////////////////////////////////////////////////////////////////////////////////
+function updateProgressBar() {
+  const total = weeklyStats.earned - weeklyStats.lost;
+  const pct   = Math.min((total / 100) * 100, 100);
+  const bar   = document.getElementById('progress-bar');
+  if (bar) bar.style.width = `${pct}%`;
+}
+
+function updatePointDisplay() {
+  console.log('✅ Entrando a updatePointDisplay');
+  generateBadges();
+
+  const bonusPoints = badges.reduce((sum, b) => sum + b.bonus, 0);
+  const totalEarned = weeklyStats.earned + bonusPoints;
+
+  [
+    { id: 'points-earned',   value: totalEarned },
+    { id: 'points-lost',     value: weeklyStats.lost },
+    { id: 'points-redeemed', value: weeklyStats.redeemed }
+  ].forEach(({ id, value }) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+    else console.warn(`⚠️ Elemento #${id} no encontrado`);
+  });
+
+  const totalEl = document.getElementById('points-total');
+  if (totalEl) {
+    totalEl.textContent = totalEarned - weeklyStats.lost - weeklyStats.redeemed;
+  }
+
+  updateProgressBar();
+  renderBadges();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 5. Utilitarios de fecha
+////////////////////////////////////////////////////////////////////////////////
+function getWeekStart(date) {
+  const d = new Date(date);
+  const dayIndex = (d.getDay() + 6) % 7; // domingo→6, lunes→0…
+  d.setDate(d.getDate() - dayIndex);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getCurrentWeekRange() {
+  const today = new Date();
+  const day   = today.getDay(); // 0=domingo
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - day + (day === 0 ? -6 : 1));
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  return {
+    startDate: monday.toISOString().split('T')[0],
+    endDate:   sunday.toISOString().split('T')[0],
+    weekLabel: `Semana del ${monday.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}
+      al ${sunday.toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}`
+  };
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 6. Reglas para cierre de semana
+////////////////////////////////////////////////////////////////////////////////
+function canCloseWeek() {
+  const now           = new Date();
+  const thisWeekStart = getWeekStart(now);
+
+  if (weeklyHistory.length === 0) {
+    return true; // Primer cierre siempre permitido
+  }
+
+  const lastEntry      = weeklyHistory[weeklyHistory.length - 1];
+  const lastWeekStart  = getWeekStart(lastEntry.timestamp);
+
+  if (thisWeekStart.getTime() === lastWeekStart.getTime()) {
+    alert(translate('alert.alreadyClosedWeek'));
+    return false;
+  }
+
+  const nextMonday = new Date(thisWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+  if (now < nextMonday) {
+    alert(translate('alert.notNextMonday'));
+    return false;
+  }
+
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 7. Penalizaciones diarias
+////////////////////////////////////////////////////////////////////////////////
+function flashMessage(text, duration = 1200) {
+  const notice = document.createElement('div');
+  notice.textContent = text;
+  Object.assign(notice.style, {
+    position: 'fixed', top: '50%', left: '50%',
+    transform: 'translate(-50%,-50%)',
+    background: '#ffe4e6', padding: '1rem 2rem',
+    borderRadius: '8px', boxShadow: '0 0 5px rgba(0,0,0,0.2)'
+  });
+  document.body.appendChild(notice);
+  setTimeout(() => notice.remove(), duration);
+}
+
+function applyDailyPenalties() {
+  const now    = new Date();
+  const cutoff = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m] = cutoff.split(':').map(Number);
+  const cd     = new Date(); cd.setHours(h, m, 0, 0);
+
+  if (now > cd) {
+    let applied = false;
+    tasks.forEach(t => {
+      if (!t.done && !t.penalized) {
+        weeklyStats.lost += t.points * 2;
+        t.penalized = true;
+        applied = true;
+      }
+    });
+    if (applied) {
+      saveStats();
+      saveTasks();
+     // updatePointDisplay();
+      flashMessage(translate('alert.penaltyApplied'));
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 8. Renderizado de listas
+////////////////////////////////////////////////////////////////////////////////
+function renderTasks() {
+  const c = document.getElementById('tasks-manage');
+  if (!c) return;
+  c.innerHTML = '';
+  tasks.forEach((t, i) => {
+    c.innerHTML += `
+      <div class="task-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
+        <span>${t.name} (${t.points} pts)</span>
+        <button class="btn-danger" data-index="${i}">${translate('button.delete')}</button>
+      </div>`;
+  });
+}
+
+function renderChildTasks() {
+  const c = document.getElementById('tasks-list');
+  if (!c) return;
+  c.innerHTML = '';
+  tasks.forEach((task, idx) => {
+    const card = document.createElement('div');
+    card.className = 'task-card';
+
+    const label = document.createElement('span');
+    label.textContent = `${task.name} (${task.points} pts)`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-success';
+    btn.textContent = task.done ? '✅ ' + translate('button.done') : translate('button.done');
+    btn.disabled   = task.done;
+    if (task.done) btn.classList.add('btn-done');
+
+    btn.addEventListener('click', () => {
+      if (task.done) return;
+      task.done            = true;
+      weeklyStats.earned  += task.points;
+      saveStats();
+      saveTasks();
+
+      btn.textContent = '✅ ' + translate('button.done');
+      btn.disabled    = true;
+      btn.classList.add('btn-done');
+     // updatePointDisplay();
+
+      // Estrella animada
+      const sparkle = document.createElement('div');
+      sparkle.className   = 'sparkle';
+      sparkle.textContent = '🌟';
+      card.appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 800);
+    });
+
+    card.appendChild(label);
+    card.appendChild(btn);
+    c.appendChild(card);
+  });
+}
+
+function renderRewardsManage() {
+  const c = document.getElementById('rewards-manage');
+  if (!c) return;
+  c.innerHTML = '';
+  rewards.forEach((r, i) => {
+    c.innerHTML += `
+      <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
+        <span>${r.name} (${r.cost} pts)</span>
+        <button class="btn-danger" data-index="${i}">${translate('button.delete')}</button>
+      </div>`;
+  });
+}
+
+function renderChildRewards() {
+  const c = document.getElementById('rewards-list');
+  if (!c) return;
+  c.innerHTML = '';
+  rewards.forEach((r, i) => {
+    const block = document.createElement('div');
+    block.className = 'reward-block flex justify-between items-center bg-white p-2 rounded mb-2';
+
+    const span = document.createElement('span');
+    span.textContent = `${r.name} (${r.cost} pts)`;
+
+    const btn = document.createElement('button');
+    btn.className     = 'btn-primary';
+    btn.textContent   = translate('button.redeem');
+    btn.dataset.index = i;
+
+    block.appendChild(span);
+    block.appendChild(btn);
+    c.appendChild(block);
+  });
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 9. Canje de recompensas
+////////////////////////////////////////////////////////////////////////////////
+function handleRewardRedemption(index) {
+  const r = rewards[index];
+  const bonusPoints = badges.reduce((s, b) => s + b.bonus, 0);
+  const available   = weeklyStats.earned + bonusPoints - weeklyStats.lost - weeklyStats.redeemed;
+
+  if (available < r.cost) {
+    return alert(translate('alert.insufficientPoints').replace('{0}', r.name));
+  }
+
+  weeklyStats.redeemed += r.cost;
+  rewards.splice(index, 1);
+  saveStats();
+  saveRewards();
+  // updatePointDisplay();
+  renderRewardsManage();
+  renderChildRewards();
+  alert(translate('alert.rewardRedeemed').replace('{0}', r.name));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 10. Historial semanal en ambas pestañas
+////////////////////////////////////////////////////////////////////////////////
+function renderWeeklyHistory() {
+  ['weekly-history-list', 'closed-weeks-history'].forEach(id => {
+    const c = document.getElementById(id);
+    if (!c) return;
+
+    // 1) Limpiar antes de volver a pintar
+    c.innerHTML = '';
+
+    // 2) Caso sin historial
+    if (weeklyHistory.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'text-gray-500';
+      p.textContent = translate('alert.noHistory');
+      c.appendChild(p);
+      return;
+    }
+
+    // 3) Mostrar últimos 5 cierres (más recientes primero)
+    weeklyHistory
+      .slice(-5)
+      .reverse()
+      .forEach((w, idx) => {
+        const date  = new Date(w.timestamp).toLocaleDateString();
+        const label = w.weekLabel || `Semana ${weeklyHistory.length - idx}`;
+
+        const entry = document.createElement('div');
+        entry.className = 'week-entry';
+
+        entry.innerHTML = `
+          <p class="font-semibold">
+            ${label} <span class="text-sm text-gray-500">(${date})</span>
+          </p>
+          <p class="text-sm text-gray-600">
+            ⭐ Ganadas: ${w.earned} |
+            ❌ Perdidas: ${w.lost} |
+            🎁 Canjeadas: ${w.redeemed}
+          </p>`;
+
+        c.appendChild(entry);
+      });
+  });
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// 11. Visualización de hora de corte y rango de semana
+////////////////////////////////////////////////////////////////////////////////
+function renderCutoffTime() {
+  const stored = localStorage.getItem('cutoffTime') || '21:00';
+  const displayEl = document.getElementById('cutoff-display');
+  const infoEl    = document.getElementById('cutoff-info');
+  const inputEl   = document.getElementById('cutoff-time');
+
+  if (displayEl) displayEl.textContent = translate('alert.cutoffInfo').replace('{0}', stored);
+  if (infoEl)    infoEl.textContent    = translate('alert.cutoffInfo').replace('{0}', stored);
+  if (inputEl)   inputEl.value         = stored;
+}
+
+renderCutoffTime();
+
+// 2) Engancho el botón de Guardar hora
+document.getElementById('save-cutoff')?.addEventListener('click', () => {
+  const inputEl = document.getElementById('cutoff-time');
+  if (!inputEl) {
+    return alert(translate('alert.errorNoCutoffField'));
+  }
+  const time = inputEl.value;
+  if (!time) {
+    return alert(translate('alert.invalidTime'));
+  }
+  localStorage.setItem('cutoffTime', time);
+  renderCutoffTime();
+  alert(translate('alert.cutoffSaved').replace('{0}', time));
+});
+
+////////////////////////////////////////////////////////////////////////////////
+// 11b. Rango de semana
+////////////////////////////////////////////////////////////////////////////////
+function renderWeekStart() {
+  const range = getCurrentWeekRange();
+  const el    = document.getElementById('week-start');
+  if (el) el.textContent = translate('alert.weekRange')
+    .replace('{0}', range.startDate)
+    .replace('{1}', range.endDate);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// 12. Navegación por pestañas
+////////////////////////////////////////////////////////////////////////////////
+function showTab(tabId) {
+  document.querySelectorAll('.tab-content')
+    .forEach(s => s.style.display = s.id === tabId ? 'block' : 'none');
+  document.querySelectorAll('.tab-btn')
+    .forEach(b => b.classList.toggle('tab-active', b.dataset.tab === tabId));
+
+  if (tabId === 'tasks' || tabId === 'settings') {
+    renderWeeklyHistory();
+  }
+}
+
+import { loadLocale, t as translate, applyTranslations } from './i18n.js';
+
+////////////////////////////////////////////////////////////////////////////////
+// 13. Inicialización y eventos
+////////////////////////////////////////////////////////////////////////////////
+window.addEventListener('DOMContentLoaded', async () => {
+  console.log('🚀 DOM cargado, inicializando app');
+
+
+  // 1) Leer selección previa o defecto
+  const savedLang = localStorage.getItem('lang') || 'es';
+
+  // 2) Carga el diccionario ES o EN
+  await loadLocale(savedLang);
+
+  // 3) Aplica traducciones en toda la UI
+  applyTranslations();
+
+  // 4) Ajusta el <select> de idiomas
+  const sel = document.getElementById('language-select');
+  if (sel) {
+    sel.value = savedLang;
+    sel.addEventListener('change', async (e) => {
+      const lang = e.target.value;
+      localStorage.setItem('lang', lang);
+      await loadLocale(lang);
+      applyTranslations();
+    });
+  }
+
+  // 5) Funciones core
+  applyDailyPenalties();
+  renderCutoffTime();
+  renderWeekStart();
+  renderWeeklyHistory();
+  renderTasks();
+  renderChildTasks();
+  renderRewardsManage();
+  renderChildRewards();
+  updatePointDisplay();
+  showTab('tasks');
+  initChildName();
+
+  // ➕ Agregar tarea
+  document.getElementById('add-task')?.addEventListener('click', () => {
+    const nameInput   = document.getElementById('new-task-name');
+    const pointsInput = document.getElementById('new-task-points');
+    const name        = nameInput?.value.trim();
+    const points      = parseInt(pointsInput?.value, 10);
+
+    if (!name || isNaN(points)) {
+      return alert(translate('alert.completeTaskFields'));
+    }
+
+    tasks.push({ name, points, done: false, penalized: false });
+    saveTasks();
+    renderTasks();
+    renderChildTasks();
+    updatePointDisplay();
+  });
+
+  // ➕ Agregar recompensa
+  document.getElementById('add-reward')?.addEventListener('click', () => {
+    const nameInput = document.getElementById('new-reward-name');
+    const costInput = document.getElementById('new-reward-cost');
+    const name      = nameInput?.value.trim();
+    const cost      = parseInt(costInput?.value, 10);
+
+    if (!name || isNaN(cost)) {
+      return alert(translate('alert.completeRewardFields'));
+    }
+
+    rewards.push({ name, cost });
+    saveRewards();
+    renderRewardsManage();
+    renderChildRewards();
+    updatePointDisplay();
+  });
+
+  // 🔄 Cerrar semana
+  document.getElementById('reset-week')?.addEventListener('click', () => {
+    const hasActivity =
+      weeklyStats.earned   > 0 ||
+      weeklyStats.lost     > 0 ||
+      weeklyStats.redeemed > 0;
+
+    if (!hasActivity) {
+      return alert(translate('alert.noActivity'));
+    }
+    if (!canCloseWeek()) {
+      return;
+    }
+    if (!confirm(translate('alert.confirmClose'))) {
+      return;
+    }
+
+    const range = getCurrentWeekRange();
+    weeklyHistory.push({
+      earned:    weeklyStats.earned,
+      lost:      weeklyStats.lost,
+      redeemed:  weeklyStats.redeemed,
+      weekLabel: range.weekLabel,
+      timestamp: new Date().toISOString()
+    });
+    saveHistory();
+
+    tasks       = [];
+    rewards     = [];
+    weeklyStats = getDefaultStats();
+    saveTasks();
+    saveRewards();
+    saveStats();
+
+    renderTasks();
+    renderChildTasks();
+    renderRewardsManage();
+    renderChildRewards();
+    updatePointDisplay();
+    renderWeeklyHistory();
+    showTab('tasks');
+
+    alert(translate('alert.closedSuccess'));
+  });
+
+  // 🔐 Navegación con PIN
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'settings' && localStorage.getItem('pin')) {
+        const entered = prompt(translate('modal.pinPrompt'));
+        if (entered !== localStorage.getItem('pin')) {
+          return alert(translate('alert.invalidPin'));
+        }
+      }
+      showTab(btn.dataset.tab);
+    });
+  });
+
+  // 👤 Guardar nombre del niño
+  function initChildName() {
+    const labelEl = document.getElementById('child-name-label');
+    const inputEl = document.getElementById('child-name-input');
+    const saveBtn = document.getElementById('save-child-name');
+
+    const storedName = localStorage.getItem('childName');
+    if (storedName) {
+      labelEl.textContent = storedName;
+      inputEl.value       = storedName;
+    }
+
+    saveBtn?.addEventListener('click', () => {
+      const name = inputEl.value.trim();
+      if (!name) {
+        return alert(translate('alert.invalidName'));
+      }
+      localStorage.setItem('childName', name);
+      labelEl.textContent = name;
+      alert(translate('alert.nameSaved').replace('{0}', name));
+    });
+  }
+
+  // 🔐 Guardar PIN
+  document.getElementById('save-pin')?.addEventListener('click', () => {
+    const input = document.getElementById('pin-input');
+    const v     = input.value.trim();
+    if (v) {
+      localStorage.setItem('pin', v);
+      alert(translate('alert.pinSaved'));
+    }
+  });
+
+  // 🚀 Service Worker PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then(() => console.log('✅ SW registrado'))
+      .catch(err => console.error('❌ SW error', err));
+  }
+});

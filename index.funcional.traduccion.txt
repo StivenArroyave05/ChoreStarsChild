@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title data-i18n="title.app">Chore Stars Child</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
+<body class="bg-blue-50 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white px-4 py-4 shadow flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-extrabold" data-i18n="app.title">Chore Stars Child</h1>
+      <p class="text-sm" data-i18n="header.subtitle">
+        Deberes y recompensas para <span id="child-name-label">[Nombre]</span>
+      </p>
+    </div>
+    <div class="text-right text-sm">
+      <p data-i18n="stats.earned">⭐ Ganadas: <span id="points-earned">0</span></p>
+      <p data-i18n="stats.lost">⭐❌ Perdidas: <span id="points-lost">0</span></p>
+      <p data-i18n="stats.redeemed">⭐🎁 Canjeadas: <span id="points-redeemed">0</span></p>
+      <p class="font-bold" data-i18n="stats.total">
+        ⭐ Totales Disponibles: <span id="points-total">0</span>
+      </p>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="bg-white border-b flex justify-around">
+    <button class="tab-btn tab-active" data-tab="tasks" data-i18n="tab.tasks">Tareas</button>
+    <button class="tab-btn" data-tab="rewards" data-i18n="tab.rewards">Recompensas</button>
+    <button class="tab-btn" data-tab="settings" data-i18n="tab.settings">Configuración</button>
+  </nav>
+
+  <!-- Main -->
+  <section id="tasks" class="tab-content visible space-y-6">
+    <div id="today-header" class="text-sm text-gray-600 mb-2"></div>
+
+    <!-- 📋 Lista de tareas -->
+    <div class="bg-blue-100 p-4 rounded-xl shadow-md">
+      <label class="text-lg font-semibold text-blue-800 mb-2" data-i18n="tasks.assigned">
+        📝 Tareas asignadas
+      </label>
+      <div id="tasks-list" class="space-y-2"></div>
+    </div>
+
+    <!-- ⭐ Barra de progreso -->
+    <div class="bg-gray-200 rounded-full h-4 w-full">
+      <div id="progress-bar"
+           class="bg-starGreen h-4 rounded-full transition-all duration-300"
+           style="width: 0%;"></div>
+    </div>
+
+    <!-- ⏰ Hora límite -->
+    <div class="bg-yellow-100 p-4 rounded-xl shadow-md">
+      <label for="cutoff-time"
+             class="text-lg font-semibold text-yellow-800"
+             data-i18n="label.cutoffTime">
+        ⏰ Hora límite diaria
+      </label>
+      <p id="cutoff-display" class="text-sm text-yellow-700"></p>
+    </div>
+
+    <!-- 📅 Semana en curso -->
+    <div class="bg-green-100 p-4 rounded-xl shadow-md">
+      <label class="text-lg font-semibold text-green-800" data-i18n="label.currentWeek">
+        📅 Semana en curso
+      </label>
+      <p class="text-sm text-green-700">
+        <span id="week-start">--</span>
+      </p>
+    </div>
+
+    <!-- 📜 Historial semanal -->
+    <div class="bg-purple-100 p-4 rounded-xl shadow-md">
+      <label class="text-lg font-semibold text-purple-800" data-i18n="label.pastHistory">
+        📜 Historial de semanas anteriores
+      </label>
+      <div id="weekly-history-list" class="space-y-2 text-sm text-purple-700"></div>
+    </div>
+
+    <!-- 🏅 Insignias -->
+    <div class="bg-white p-4 rounded-xl shadow-md">
+      <h3 class="text-lg font-bold text-starPurple" data-i18n="label.badges">
+        🏅 Insignias desbloqueadas
+      </h3>
+      <div id="badge-list" class="flex gap-4 mt-2 text-2xl"></div>
+    </div>
+  </section>
+
+  <!-- Recompensas -->
+  <section id="rewards" class="tab-content hidden space-y-4">
+    <div id="rewards-list" class="space-y-2"></div>
+  </section>
+
+  <!-- Configuración -->
+  <section id="settings" class="tab-content hidden space-y-8">
+    <label class="font-semibold text-lg text-center mt-4" data-i18n="settings.parentSpace">
+      Espacio para uso exclusivo de los padres
+    </label>
+
+  <label for="language-select" class="block mb-1" data-i18n="label.language">Idioma</label>
+  <select id="language-select" class="input w-32 mb-4">
+    <option value="es">Español</option>
+    <option value="en">English</option>
+  </select>
+
+
+    <div class="space-y-2">
+      <label data-i18n="label.childName" for="child-name-input" class="font-semibold text-lg">
+        Nombre del niño:
+      </label>
+      <input id="child-name-input" type="text" class="input"
+             data-i18n-placeholder="placeholder.childName"
+             placeholder=""/>
+      <button id="save-child-name" class="btn-primary" data-i18n="button.saveChildName">
+        Guardar nombre
+      </button>
+    </div>
+
+    <div class="space-y-2">
+      <label data-i18n="label.pinAccess" for="pin-input" class="font-semibold text-lg">
+        PIN de acceso:
+      </label>
+      <input id="pin-input" type="password" class="input"
+             placeholder="Ej: 1234"/>
+      <button id="save-pin" class="btn-primary" data-i18n="button.savePin">
+        Guardar PIN
+      </button>
+      <p id="pin-status" class="text-sm text-green-600 hidden" data-i18n="status.pinSaved">
+        PIN guardado correctamente.
+      </p>
+    </div>
+
+    <div class="space-y-2">
+      <label data-i18n="label.cutoffTime" for="cutoff-time" class="font-semibold text-lg">
+        Hora límite diaria:
+      </label>
+      <input id="cutoff-time" type="time" class="input" value="21:00"/>
+      <button id="save-cutoff" class="btn-primary" data-i18n="button.saveHour">
+        Guardar hora
+      </button>
+    </div>
+
+    <div class="space-y-2">
+      <label data-i18n="settings.newTask" class="font-semibold text-lg">
+        Tareas
+      </label>
+      <input id="new-task-name" type="text" class="input"
+             data-i18n-placeholder="placeholder.taskName" placeholder=""/>
+      <input id="new-task-points" type="number" class="input"
+             data-i18n-placeholder="placeholder.taskPoints" placeholder=""/>
+      <button id="add-task" class="btn-success" data-i18n="button.addTask">
+        Añadir tarea
+      </button>
+      <div id="tasks-manage" class="space-y-2 mt-4"></div>
+    </div>
+
+    <div class="space-y-2">
+      <label data-i18n="settings.newReward" class="font-semibold text-lg">
+        Recompensas
+      </label>
+      <input id="new-reward-name" type="text" class="input"
+             data-i18n-placeholder="placeholder.rewardName" placeholder=""/>
+      <input id="new-reward-cost" type="number" class="input"
+             data-i18n-placeholder="placeholder.rewardCost" placeholder=""/>
+      <button id="add-reward" class="btn-warning" data-i18n="button.addReward">
+        Añadir recompensa
+      </button>
+      <div id="rewards-manage" class="space-y-2 mt-4"></div>
+    </div>
+
+    <div>
+      <h3 class="font-semibold text-lg" data-i18n="label.closeWeek">
+        Cerrar semana y guardar historial
+      </h3>
+      <button id="reset-week" class="btn-primary" data-i18n="button.closeWeek">
+        Cerrar semana
+      </button>
+      <div id="weekly-summary-box" class="mt-4 text-sm text-left space-y-2"></div>
+    </div>
+
+    <!-- ✅ Historial solo visible en esta pestaña -->
+    <section class="mt-4">
+      <h3 class="font-bold text-lg mb-2 text-center" data-i18n="label.closedHistory">
+        Historial de semanas cerradas
+      </h3>
+      <div id="closed-weeks-history"></div>
+    </section>
+  </section>
+
+  <!-- Modals, toasts y script idénticos a tu código actual -->
+  <script type="module" src="main.js"></script>
+  <div id="toast" class="fixed bottom-4 right-4 bg-white text-gray-800 shadow-lg rounded px-4 py-3 hidden z-50"></div>
+</body>
+</html>

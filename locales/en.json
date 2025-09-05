@@ -1,0 +1,57 @@
+// locales/en.json
+{
+  "title.app":           "Chore Stars Child",
+  "header.subtitle":     "Chores and rewards for",
+  "stats.earned":        "⭐ Earned: {0}",
+  "stats.lost":          "⭐❌ Lost: {0}",
+  "stats.redeemed":      "⭐🎁 Redeemed: {0}",
+  "stats.total":         "⭐ Total Available: {0}",
+
+  "tab.tasks":           "Tasks",
+  "tab.rewards":         "Rewards",
+  "tab.settings":        "Settings",
+
+  "tasks.assigned":      "📝 Assigned tasks",
+  "label.cutoffTime":    "⏰ Daily cutoff time",
+  "label.currentWeek":   "📅 Current week",
+  "label.pastHistory":   "📜 Past weeks history",
+  "label.badges":        "🏅 Unlocked badges",
+
+  "settings.parentSpace":"Space for parents only",
+
+  "label.childName":     "Child name:",
+  "button.saveChildName":"Save name",
+
+  "label.pinAccess":     "Access PIN:",
+  "button.savePin":      "Save PIN",
+  "status.pinSaved":     "PIN saved successfully.",
+
+  "button.saveHour":     "Save time",
+
+  "settings.newTask":    "Tasks",
+  "placeholder.childName":"Enter child's name",
+  "placeholder.taskName":"Task name",
+  "placeholder.taskPoints":"Points",
+  "button.addTask":      "Add task",
+
+  "settings.newReward":  "Rewards",
+  "placeholder.rewardName":"Reward name",
+  "placeholder.rewardCost":"Cost in points",
+  "button.addReward":    "Add reward",
+
+  "label.closeWeek":     "Close week and save history",
+  "button.closeWeek":    "Close week",
+  "alert.noActivity":    "No activity recorded this week.",
+  "alert.confirmClose":  "Close week and save history?",
+  "alert.closedSuccess": "✅ Week closed and saved",
+
+  "label.closedHistory": "Closed weeks history",
+
+  // placeholders de modal
+  "modal.weeklySummaryTitle":"📅 Weekly summary",
+  "button.closeSummary":  "Close",
+
+  "modal.pinPrompt":      "Enter PIN to access Settings:",
+  "button.modalConfirm":  "Confirm",
+  "button.modalCancel":   "Cancel"
+}
