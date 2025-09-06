@@ -156,7 +156,7 @@ const translations = {
     swNotRegistered:        "No SW registered.",
     searchingUpdates:       "Searching for updates…",
     selectChildBtn:         "Select",
-    deleteChildBtn:         "Delete"
+    deleteChildBtn:         "Delete",
     pointsSuffix:           "pts",
     markDoneBtn:            "Done",
     markedDoneBtn:          "✅ Done"
@@ -1402,4 +1402,5 @@ function sendSkipWaiting(worker) {
     }
   });
 }
+
 
