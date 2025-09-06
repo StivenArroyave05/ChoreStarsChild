@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (welcomeSelect) {
       welcomeSelect.value = saved;
     }
+
     if (localStorage.getItem('lang')) {
       document.getElementById('welcome-screen').style.display = 'none';
     }
@@ -156,12 +157,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
   }
 
-// Cuando cambias el idioma en la pantalla de bienvenida,
-// reaplicamos la traducción sin ocultar aún el welcome-screen.
-  document.getElementById('welcome-lang-select')
-    ?.addEventListener('change', e => {
+    document.getElementById('welcome-lang-select')
+      ?.addEventListener('change', e => {
       const lang = e.target.value;
-      applyTranslations(lang);
+      updateTodayHeader();
+      renderCutoffTime();
+      renderWeekStart();
+      renderWeeklyHistory();
+      renderBadges();
+      updatePointDisplay();
+    });
+
   });
 
   
