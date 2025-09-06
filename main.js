@@ -1170,26 +1170,35 @@ const translations = {
   }
 };
 
-// 2) Función que recorre [data-i18n] y aplica la traducción
+// 2) In applyTranslations, add placeholders:
 function applyTranslations(lang) {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const txt = translations[lang]?.[key];
-    if (txt) el.textContent = txt;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.dataset.i18n;
+    if (translations[lang]?.[key]) {
+      el.textContent = translations[lang][key];
+    }
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+    const key = el.dataset.i18nPlaceholder;
+    if (translations[lang]?.[key]) {
+      el.placeholder = translations[lang][key];
+    }
   });
 }
 
-// 3) Al cargar, aplicamos y guardamos la selección
-document.addEventListener('DOMContentLoaded', () => {
-  const select = document.getElementById('language-select');
-  const saved  = localStorage.getItem('lang') || 'es';
-  applyTranslations(saved);
-  if (select) {
-    select.value = saved;
-    select.addEventListener('change', e => {
-      const lang = e.target.value;
-      localStorage.setItem('lang', lang);
-      applyTranslations(lang);
-    });
+// 3) On welcome “Comenzar”:
+document.getElementById("welcome-start").addEventListener("click", () => {
+  const lang = document.getElementById("welcome-lang-select").value;
+  localStorage.setItem("lang", lang);
+  applyTranslations(lang);
+  document.getElementById("welcome-screen").style.display = "none";
+});
+
+// 4) On load, apply saved lang and hide welcome if done:
+document.addEventListener("DOMContentLoaded", () => {
+  const saved = localStorage.getItem("lang");
+  if (saved) {
+    applyTranslations(saved);
+    document.getElementById("welcome-screen").style.display = "none";
   }
 });
