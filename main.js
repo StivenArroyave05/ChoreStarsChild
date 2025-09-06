@@ -58,6 +58,7 @@ const translations = {
     constantEffort:         "Esfuerzo constante",
     rewardExplorer:         "Explorador recompensas",
     totalDiscipline:        "Disciplina total"
+    footerText:             "Chore Stars Child - Todos los derechos reservados - 2025"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -114,6 +115,7 @@ const translations = {
     constantEffort:         "Consistent effort",
     rewardExplorer:         "Reward explorer",
     totalDiscipline:        "Total discipline"
+    footerText:             "Chore Stars Child - All rights reserved - 2025"
   }
 };
 
