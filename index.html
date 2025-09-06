@@ -11,11 +11,14 @@
   <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="/style.css">
 </head>
+
 <body class="bg-blue-50 min-h-screen flex flex-col font-sans">
 
   <!-- Pantalla de bienvenida -->
   <div id="welcome-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4">
-    <h1 class="text-center text-3xl font-extrabold mb-4" data-i18n="welcomeTitle">Bienvenido a Chore Stars Child</h1>
+    <h1 class="text-center text-3xl font-extrabold mb-4" data-i18n="welcomeTitle">
+      Bienvenido a Chore Stars Child
+    </h1>
     <p class="text-center mb-6" data-i18n="welcomeDesc">
       Organiza tareas y recompensas de forma divertida y segura.
     </p>
@@ -43,8 +46,10 @@
       <div>
         <h1 class="text-2xl font-extrabold" data-i18n="appTitle">Chore Stars Child</h1>
         <label class="text-sm opacity-80">
-         <span data-i18n="panelSubtitle">Panel de tareas, deberes y recompensas para</span>
-         <span id="child-name-label" class="font-extrabold"></span>
+          <span data-i18n="panelSubtitle">
+            Panel de tareas, deberes y recompensas para
+          </span>
+          <span id="child-name-label" class="font-extrabold"></span>
         </label>
       </div>
     </div>
@@ -59,8 +64,8 @@
   <!-- Tabs -->
   <nav class="app-nav">
     <button class="tab-btn tab-active" data-tab="tasks" data-i18n="tabTasks">Tareas</button>
-    <button class="tab-btn" data-tab="rewards" data-i18n="tabRewards">Recompensas</button>
-    <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">Configuración</button>
+    <button class="tab-btn"        data-tab="rewards" data-i18n="tabRewards">Recompensas</button>
+    <button class="tab-btn"        data-tab="settings" data-i18n="tabSettings">Configuración</button>
   </nav>
 
   <!-- Main content -->
@@ -68,7 +73,10 @@
 
     <!-- Tasks tab -->
     <section id="tasks" class="tab-content visible space-y-6">
-      <div id="today-header" class="text-sm text-gray-600 mb-2 text-center"></div>
+      <div id="today-header" class="text-sm text-gray-600 mb-2 text-center">
+        <span data-i18n="todayLabel">Hoy es:</span>
+        <span id="today-date"></span>
+      </div>
 
       <section class="tasks-section text-center">
         <label class="tasks-title" data-i18n="assignedTasks">📝 Tareas asignadas</label>
@@ -76,28 +84,42 @@
       </section>
 
       <div class="bg-gray-200 rounded-full h-4 w-full">
-        <div id="progress-bar" class="bg-starGreen h-4 rounded-full transition-all duration-300" style="width: 0%;"></div>
+        <div id="progress-bar"
+             class="bg-starGreen h-4 rounded-full transition-all duration-300"
+             style="width: 0%;"></div>
       </div>
 
       <div class="bg-yellow-100 p-4 rounded-xl shadow-md text-center">
-        <label for="cutoff-time" class="text-lg font-semibold text-yellow-800" data-i18n="dailyCutoffLabel">
+        <label for="cutoff-time"
+               class="text-lg font-semibold text-yellow-800"
+               data-i18n="dailyCutoffLabel">
           ⏰ Hora límite diaria
         </label>
-        <p id="cutoff-display" class="text-sm text-yellow-700"></p>
+        <p id="cutoff-display" class="text-sm text-yellow-700">
+          <span data-i18n="cutoffIntro">Completa antes de</span>
+          <span id="cutoff-time-display"></span>
+        </p>
       </div>
 
       <div class="bg-green-100 p-4 rounded-xl shadow-md text-center">
         <label class="text-lg font-semibold text-green-800" data-i18n="currentWeekLabel">
           📅 Semana en curso
         </label>
-        <p class="text-sm text-green-700"><span id="week-start">--</span></p>
+        <p class="text-sm text-green-700">
+          <span data-i18n="fromLabel">Desde:</span>
+          <span id="week-start"></span>
+          &nbsp;<span data-i18n="toLabel">Hasta:</span>
+          <span id="week-end"></span>
+        </p>
       </div>
 
       <div class="bg-purple-100 p-4 rounded-xl shadow-md text-center">
         <label class="text-lg font-semibold text-purple-800" data-i18n="weeklyHistoryLabel">
           📜 Historial de semanas anteriores
         </label>
-        <div id="weekly-history-list" class="space-y-2 text-sm text-purple-700"></div>
+        <div id="weekly-history-list" class="space-y-2 text-sm text-purple-700">
+          <p id="no-history" data-i18n="noHistory">No hay semanas cerradas aún.</p>
+        </div>
       </div>
 
       <div class="bg-white p-4 rounded-xl shadow-md text-center">
@@ -120,38 +142,66 @@
         Espacio para uso exclusivo de los padres
       </p>
 
-      <!-- Children management -->
+      <!-- Child management -->
       <div class="settings-section">
         <label class="font-semibold text-lg block mb-2" data-i18n="childManagementLabel">
           👨‍👩‍👧‍👦 Gestión de niños
         </label>
         <div class="flex gap-2 items-center">
-          <input id="new-child-name" type="text" class="input flex-1" placeholder="Nombre del niño" />
-          <button id="add-child" class="btn btn-primary" data-i18n="addChildBtn">Añadir niño</button>
+          <input id="new-child-name"
+                 type="text"
+                 class="input flex-1"
+                 placeholder=""
+                 data-i18n-placeholder="childNamePlaceholder" />
+          <button id="add-child"
+                  class="btn btn-primary"
+                  data-i18n="addChildBtn">
+            Añadir niño
+          </button>
         </div>
         <ul id="children-list" class="space-y-2 mt-4"></ul>
       </div>
 
-      <!-- Cutoff time -->
+      <!-- Daily cutoff -->
       <div class="settings-section">
-        <label for="cutoff-time" class="font-semibold text-lg block mb-2" data-i18n="cutoffTimeLabel">
+        <label for="cutoff-time"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="cutoffTimeLabel">
           ⏰ Hora límite diaria para completar las tareas
         </label>
         <div class="flex gap-2 items-center">
-          <input id="cutoff-time" type="time" class="input flex-1" value="21:00" />
-          <button id="save-cutoff" class="btn btn-primary" data-i18n="saveCutoffBtn">Guardar hora</button>
+          <input id="cutoff-time"
+                 type="time"
+                 class="input flex-1" />
+          <button id="save-cutoff"
+                  class="btn btn-primary"
+                  data-i18n="saveCutoffBtn">
+            Guardar hora
+          </button>
         </div>
       </div>
 
       <!-- PIN -->
       <div class="settings-section">
-        <label for="pin-input" class="font-semibold text-lg block mb-2" data-i18n="pinLabel">
+        <label for="pin-input"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="pinLabel">
           🔐 PIN de acceso al panel de configuración
         </label>
         <div class="flex gap-2 items-center">
-          <input id="pin-input" type="password" class="input flex-1" placeholder="Ej: 1234" />
-          <button id="save-pin" class="btn btn-primary" data-i18n="savePinBtn">Guardar PIN</button>
-          <p id="pin-status" class="text-sm text-green-600 hidden ml-2" data-i18n="pinSavedMsg">
+          <input id="pin-input"
+                 type="password"
+                 class="input flex-1"
+                 placeholder=""
+                 data-i18n-placeholder="pinPlaceholder" />
+          <button id="save-pin"
+                  class="btn btn-primary"
+                  data-i18n="savePinBtn">
+            Guardar PIN
+          </button>
+          <p id="pin-status"
+             class="text-sm text-green-600 hidden ml-2"
+             data-i18n="pinSavedMsg">
             PIN guardado correctamente.
           </p>
         </div>
@@ -159,26 +209,54 @@
 
       <!-- Task management -->
       <div class="settings-section">
-        <label for="new-task-name" class="font-semibold text-lg block mb-2" data-i18n="taskManagementLabel">
+        <label for="new-task-name"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="taskManagementLabel">
           📝 Gestión de tareas
         </label>
         <div class="flex gap-2 items-center">
-          <input id="new-task-name" type="text" class="input flex-1" placeholder="Nombre de la tarea" />
-          <input id="new-task-points" type="number" class="input w-24" placeholder="Puntos" />
-          <button id="add-task" class="btn btn-success" data-i18n="addTaskBtn">Añadir tarea</button>
+          <input id="new-task-name"
+                 type="text"
+                 class="input flex-1"
+                 placeholder=""
+                 data-i18n-placeholder="taskNamePlaceholder" />
+          <input id="new-task-points"
+                 type="number"
+                 class="input w-24"
+                 placeholder=""
+                 data-i18n-placeholder="taskPointsPlaceholder" />
+          <button id="add-task"
+                  class="btn btn-success"
+                  data-i18n="addTaskBtn">
+            Añadir tarea
+          </button>
         </div>
         <div id="tasks-manage" class="cards-grid mt-4"></div>
       </div>
 
       <!-- Reward management -->
       <div class="settings-section">
-        <label for="new-reward-name" class="font-semibold text-lg block mb-2" data-i18n="rewardManagementLabel">
+        <label for="new-reward-name"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="rewardManagementLabel">
           🎁 Gestión de recompensas
         </label>
         <div class="flex gap-2 items-center">
-          <input id="new-reward-name" type="text" class="input flex-1" placeholder="Nombre de la recompensa" />
-          <input id="new-reward-cost" type="number" class="input w-24" placeholder="Costo" />
-          <button id="add-reward" class="btn btn-warning" data-i18n="addRewardBtn">Añadir recompensa</button>
+          <input id="new-reward-name"
+                 type="text"
+                 class="input flex-1"
+                 placeholder=""
+                 data-i18n-placeholder="rewardNamePlaceholder" />
+          <input id="new-reward-cost"
+                 type="number"
+                 class="input w-24"
+                 placeholder=""
+                 data-i18n-placeholder="rewardCostPlaceholder" />
+          <button id="add-reward"
+                  class="btn btn-warning"
+                  data-i18n="addRewardBtn">
+            Añadir recompensa
+          </button>
         </div>
         <div id="rewards-manage" class="cards-grid mt-4"></div>
       </div>
@@ -189,7 +267,11 @@
           📅 Cerrar semana y guardar historial
         </label>
         <div class="flex justify-start gap-2">
-          <button id="reset-week" class="btn btn-primary" data-i18n="closeWeekBtn">Cerrar semana</button>
+          <button id="reset-week"
+                  class="btn btn-primary"
+                  data-i18n="closeWeekBtn">
+            Cerrar semana
+          </button>
         </div>
         <div id="weekly-summary-box" class="mt-4 text-sm text-left space-y-2"></div>
       </div>
@@ -204,11 +286,15 @@
 
       <!-- Install updates -->
       <div class="settings-section">
-        <label for="install-updates" class="font-semibold text-lg block mb-2" data-i18n="installUpdatesLabel">
+        <label for="install-updates"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="installUpdatesLabel">
           Recarga la versión más reciente de la app
         </label>
         <div class="flex justify-start gap-2">
-          <button id="install-updates" class="btn btn-success" data-i18n="installUpdatesBtn">
+          <button id="install-updates"
+                  class="btn btn-success"
+                  data-i18n="installUpdatesBtn">
             Instalar actualizaciones
           </button>
         </div>
@@ -220,21 +306,13 @@
           ⚠️ Reiniciar la app al estado inicial
         </label>
         <div class="flex justify-start gap-2">
-          <button id="reset-app" class="btn btn-danger" data-i18n="resetAppBtn">
+          <button id="reset-app"
+                  class="btn btn-danger"
+                  data-i18n="resetAppBtn">
             Reiniciar aplicación
           </button>
         </div>
       </div>
-
-
-  <!-- Language selector -->
-  <div id="language-selector" class="text-center mt-4">
-    <label for="language-select" data-i18n="languageLabel">Idioma:</label>
-    <select id="language-select" class="ml-2 border rounded px-2 py-1">
-      <option value="es">Español</option>
-      <option value="en">English</option>
-    </select>
-  </div>
 
     </section>
   </main>
@@ -288,6 +366,8 @@
 
 
   <script type="module" src="main.js"></script>
-  <div id="toast" class="fixed bottom-4 right-4 bg-white text-gray-800 shadow-lg rounded px-4 py-3 hidden z-50"></div>
+   <div id="toast"
+       class="fixed bottom-4 right-4 bg-white text-gray-800 shadow-lg rounded px-4 py-3 hidden z-50">
+  </div>
 </body>
 </html>

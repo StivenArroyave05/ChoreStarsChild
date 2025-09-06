@@ -1106,6 +1106,17 @@ const translations = {
     installUpdatesBtn:  "Instalar actualizaciones",
     resetAppLabel:      "⚠️ Reiniciar la app al estado inicial",
     resetAppBtn:        "Reiniciar aplicación"
+    todayLabel:             "Hoy es:",
+    cutoffIntro:            "Completa antes de",
+    fromLabel:              "Desde:",
+    toLabel:                "Hasta:",
+    noHistory:              "No hay semanas cerradas aún.",
+    childNamePlaceholder:   "Nombre del niño",
+    pinPlaceholder:         "Ej: 1234",
+    taskNamePlaceholder:    "Nombre de la tarea",
+    taskPointsPlaceholder:  "Puntos",
+    rewardNamePlaceholder:  "Nombre de la recompensa",
+    rewardCostPlaceholder:  "Costo"
   },
   en: {
     welcomeTitle:     "Welcome to Chore Stars Child",
@@ -1145,6 +1156,17 @@ const translations = {
     installUpdatesBtn:  "Install updates",
     resetAppLabel:      "⚠️ Reset app to initial state",
     resetAppBtn:        "Reset app"
+    todayLabel:             "Today is:",
+    cutoffIntro:            "Complete before",
+    fromLabel:              "From:",
+    toLabel:                "To:",
+    noHistory:              "No history yet.",
+    childNamePlaceholder:   "Child name",
+    pinPlaceholder:         "Ex: 1234",
+    taskNamePlaceholder:    "Task name",
+    taskPointsPlaceholder:  "Points",
+    rewardNamePlaceholder:  "Reward name",
+    rewardCostPlaceholder:  "Cost"
   }
 };
 
