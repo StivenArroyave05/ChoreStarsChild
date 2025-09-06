@@ -1,7 +1,7 @@
 // main.js
 
 
-// 1) Traducciones completas de una sola vez
+// 1) Traducciones
 const translations = {
   es: {
     appTitle:               "Chore Stars Child",
@@ -117,90 +117,75 @@ const translations = {
   }
 };
 
-// 2) Función genérica para texto y placeholders
+// 2) applyTranslations (texto y placeholder)
 function applyTranslations(lang) {
-  // textos
   document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
+    const key = el.dataset.i18n;
     const txt = translations[lang]?.[key];
     if (txt) el.textContent = txt;
   });
-  // placeholders
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-    const key = el.getAttribute('data-i18n-placeholder');
+    const key = el.dataset.i18nPlaceholder;
     const txt = translations[lang]?.[key];
     if (txt) el.placeholder = txt;
   });
 }
 
-// 3) Al iniciar la app
+// 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
+  // — 3.1) Idioma guardado o por defecto
   const saved = localStorage.getItem('lang') || 'es';
-  if (saved) {
-    applyTranslations(saved);
+  applyTranslations(saved);
+
+  // — 3.2) Ejecutar renders que dependen de idioma o localStorage
+  updateHeaderName();
+  updateTodayHeader();
+  renderCutoffTime();
+  renderWeekStart();
+  renderWeeklyHistory();
+  renderBadges();
+  updatePointDisplay();
+
+  // — 3.3) Bienvenida: ajustar select y ocultarla si ya hay idioma
+  const welcomeSelect = document.getElementById('welcome-lang-select');
+  if (welcomeSelect) welcomeSelect.value = saved;
+  if (localStorage.getItem('lang')) {
+    document.getElementById('welcome-screen').style.display = 'none';
+  }
+
+  // — 3.4) Cambiar idioma en bienvenida en vivo
+  welcomeSelect?.addEventListener('change', e => {
+    applyTranslations(e.target.value);
+  });
+
+  // — 3.5) Botón “Comenzar”
+  document.getElementById('welcome-start')?.addEventListener('click', () => {
+    const lang = welcomeSelect.value;
+    localStorage.setItem('lang', lang);
+    applyTranslations(lang);
+    document.getElementById('welcome-screen').style.display = 'none';
+
+    // refrescar lógica dependiente de idioma
     updateTodayHeader();
     renderCutoffTime();
     renderWeekStart();
     renderWeeklyHistory();
     renderBadges();
     updatePointDisplay();
-
-    const welcomeSelect = document.getElementById('welcome-lang-select');
-    if (welcomeSelect) {
-      welcomeSelect.value = saved;
-    }
-
-    if (localStorage.getItem('lang')) {
-      document.getElementById('welcome-screen').style.display = 'none';
-    }
-
-    
-  }
-
-    document.getElementById('welcome-lang-select')
-      ?.addEventListener('change', e => {
-      const lang = e.target.value;
-      updateTodayHeader();
-      renderCutoffTime();
-      renderWeekStart();
-      renderWeeklyHistory();
-      renderBadges();
-      updatePointDisplay();
-    });
-
   });
 
-  
-  // Listener de Bienvenida → guarda idioma y muestra app
-    document.getElementById('welcome-start')
-    .addEventListener('click', () => {
-      const lang = document.getElementById('welcome-lang-select').value;
-      localStorage.setItem('lang', lang);
-      applyTranslations(lang);
-      document.getElementById('welcome-screen').style.display = 'none';
-
-      updateTodayHeader(); 
-      renderCutoffTime();
-      renderWeekStart();
-      renderWeeklyHistory();
-      renderBadges();
-      updatePointDisplay();
-      document.getElementById('welcome-screen').style.display = 'none';
-    });
-  
-  // Listener al selector (si quieres cambiar a mitad)
-  document.getElementById('language-select')
-    ?.addEventListener('change', e => {
-      const lang = e.target.value;
-      localStorage.setItem('lang', lang);
-      applyTranslations(lang);
-      updateTodayHeader(); 
-      renderCutoffTime();
-      renderWeekStart();
-      renderWeeklyHistory();
-      renderBadges();
-      updatePointDisplay();
-    });
+  // — 3.6) Selector permanente de idioma
+  document.getElementById('language-select')?.addEventListener('change', e => {
+    const lang = e.target.value;
+    localStorage.setItem('lang', lang);
+    applyTranslations(lang);
+    updateTodayHeader();
+    renderCutoffTime();
+    renderWeekStart();
+    renderWeeklyHistory();
+    renderBadges();
+    updatePointDisplay();
+  });
 
 ////////////////////////////////////////////////////////////////////////////////
 // X. Migración de un solo childName a array de children
