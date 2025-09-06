@@ -81,7 +81,8 @@ const translations = {
     pointsSuffix:           "pts",
     markDoneBtn:            "Hecho",
     markedDoneBtn:          "✅ Hecho",
-    deleteRewardBtn:        "Eliminar"
+    deleteRewardBtn:        "Eliminar",
+    penaltyAppliedMsg:      "⚠️ Penalización aplicada"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -161,7 +162,8 @@ const translations = {
     pointsSuffix:           "pts",
     markDoneBtn:            "Done",
     markedDoneBtn:          "✅ Done",
-    deleteRewardBtn:        "Delete"
+    deleteRewardBtn:        "Delete",
+    penaltyAppliedMsg:      "⚠️ Penalty applied"
   }
 };
 
@@ -606,6 +608,9 @@ function flashMessage(text, duration = 1200) {
 }
 
 function applyDailyPenalties() {
+  const lang   = localStorage.getItem('lang') || 'es';
+  const t      = translations[lang];
+
   const now    = new Date();
   const cutoff = localStorage.getItem('cutoffTime') || '21:00';
   const [h, m] = cutoff.split(':').map(Number);
@@ -617,7 +622,6 @@ function applyDailyPenalties() {
 
   tasks.forEach(t => {
     if (!t.done && !t.penalized) {
-      // coge stats del niño de la tarea
       const stats = getStatsFor(t.childId);
       stats.lost += t.points * 2;
       t.penalized = true;
@@ -629,9 +633,10 @@ function applyDailyPenalties() {
     saveStatsMap();
     saveTasks();
     updatePointDisplay();
-    flashMessage('⚠️ Penalización aplicada');
+    flashMessage(t.penaltyAppliedMsg);
   }
 }
+
 
 /**
  * Intenta compartir vía Web Share API el mensaje:
