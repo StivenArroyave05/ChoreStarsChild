@@ -701,16 +701,6 @@ function showTab(tabId) {
 }
 
 
-document.getElementById('welcome-start').addEventListener('click', () => {
-  const welcome = document.getElementById('welcome-screen');
-  welcome.style.display = 'none';
-  // inicia traducción con el idioma elegido
-  const lang = document.getElementById('welcome-lang-select').value;
-  localStorage.setItem('lang', lang);
-  applyTranslations(lang);
-});
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // 13. Inicialización y eventos
 ////////////////////////////////////////////////////////////////////////////////
@@ -1066,131 +1056,152 @@ function sendSkipWaiting(worker) {
 }
 
 
-// 1) Traducciones
+// ——— main.js ———
+// 1) Traducciones completas de una sola vez
 const translations = {
   es: {
-    welcomeTitle:      "Bienvenido a Chore Stars Child",
-    welcomeDesc:       "Organiza tareas y recompensas de forma divertida y segura.",
-    startButton:       "Comenzar",
-    languageLabel:    "Idioma:",
-    appTitle:         "Chore Stars Child",
-    panelSubtitle:    "Panel de tareas, deberes y recompensas para",
-    earnedLabel:      "Ganadas",
-    lostLabel:        "Perdidas",
-    redeemedLabel:    "Canjeadas",
-    totalLabel:       "Totales",
-    tabTasks:         "Tareas",
-    tabRewards:       "Recompensas",
-    tabSettings:      "Configuración",
-    assignedTasks:    "📝 Tareas asignadas",
-    dailyCutoffLabel: "⏰ Hora límite diaria",
-    currentWeekLabel: "📅 Semana en curso",
-    weeklyHistoryLabel:"📜 Historial de semanas anteriores",
-    badgesLabel:      "🏅 Insignias desbloqueadas esta semana",
-    parentsIntro:     "Espacio para uso exclusivo de los padres",
-    childManagementLabel:"👨‍👩‍👧‍👦 Gestión de niños",
-    addChildBtn:      "Añadir niño",
-    cutoffTimeLabel:  "⏰ Hora límite diaria para completar las tareas",
-    saveCutoffBtn:    "Guardar hora",
-    pinLabel:         "🔐 PIN de acceso al panel de configuración",
-    savePinBtn:       "Guardar PIN",
-    pinSavedMsg:      "PIN guardado correctamente.",
-    taskManagementLabel:"📝 Gestión de tareas",
-    addTaskBtn:       "Añadir tarea",
-    rewardManagementLabel:"🎁 Gestión de recompensas",
-    addRewardBtn:     "Añadir recompensa",
-    closeWeekLabel:   "📅 Cerrar semana y guardar historial",
-    closeWeekBtn:     "Cerrar semana",
-    closedWeeksLabel: "📜 Historial de semanas cerradas",
-    installUpdatesLabel: "Recarga la versión más reciente de la app",
-    installUpdatesBtn:  "Instalar actualizaciones",
-    resetAppLabel:      "⚠️ Reiniciar la app al estado inicial",
-    resetAppBtn:        "Reiniciar aplicación"
+    appTitle:               "Chore Stars Child",
+    panelSubtitle:          "Panel de tareas, deberes y recompensas para",
+    earnedLabel:            "Ganadas",
+    lostLabel:              "Perdidas",
+    redeemedLabel:          "Canjeadas",
+    totalLabel:             "Totales",
+    tabTasks:               "Tareas",
+    tabRewards:             "Recompensas",
+    tabSettings:            "Configuración",
+    assignedTasks:          "📝 Tareas asignadas",
+    dailyCutoffLabel:       "⏰ Hora límite diaria",
     todayLabel:             "Hoy es:",
     cutoffIntro:            "Completa antes de",
     fromLabel:              "Desde:",
     toLabel:                "Hasta:",
+    currentWeekLabel:       "📅 Semana en curso",
+    weeklyHistoryLabel:     "📜 Historial de semanas anteriores",
     noHistory:              "No hay semanas cerradas aún.",
+    badgesLabel:            "🏅 Insignias desbloqueadas esta semana",
+    parentsIntro:           "Espacio para uso exclusivo de los padres",
+    childManagementLabel:   "👨‍👩‍👧‍👦 Gestión de niños",
+    addChildBtn:            "Añadir niño",
     childNamePlaceholder:   "Nombre del niño",
+    cutoffTimeLabel:        "⏰ Hora límite diaria para completar las tareas",
+    saveCutoffBtn:          "Guardar hora",
+    pinLabel:               "🔐 PIN de acceso al panel de configuración",
     pinPlaceholder:         "Ej: 1234",
+    savePinBtn:             "Guardar PIN",
+    pinSavedMsg:            "PIN guardado correctamente.",
+    taskManagementLabel:    "📝 Gestión de tareas",
     taskNamePlaceholder:    "Nombre de la tarea",
     taskPointsPlaceholder:  "Puntos",
+    addTaskBtn:             "Añadir tarea",
+    rewardManagementLabel:  "🎁 Gestión de recompensas",
     rewardNamePlaceholder:  "Nombre de la recompensa",
-    rewardCostPlaceholder:  "Costo"
+    rewardCostPlaceholder:  "Costo",
+    addRewardBtn:           "Añadir recompensa",
+    closeWeekLabel:         "📅 Cerrar semana y guardar historial",
+    closeWeekBtn:           "Cerrar semana",
+    closedWeeksLabel:       "📜 Historial de semanas cerradas",
+    installUpdatesLabel:    "Recarga la versión más reciente de la app",
+    installUpdatesBtn:      "Instalar actualizaciones",
+    resetAppLabel:          "⚠️ Reiniciar la app al estado inicial",
+    resetAppBtn:            "Reiniciar aplicación",
+    languageLabel:          "Idioma:",
+    welcomeTitle:           "Bienvenido a Chore Stars Child",
+    welcomeDesc:            "Organiza tareas y recompensas de forma divertida y segura.",
+    startButton:            "Comenzar"
   },
   en: {
-    welcomeTitle:     "Welcome to Chore Stars Child",
-    welcomeDesc:      "Organize chores and rewards in a fun and safe way.",
-    startButton:      "Start",
-    languageLabel:    "Language:",
-    appTitle:         "Chore Stars Child",
-    panelSubtitle:    "Task, duty and reward panel for",
-    earnedLabel:      "Earned",
-    lostLabel:        "Lost",
-    redeemedLabel:    "Redeemed",
-    totalLabel:       "Total",
-    tabTasks:         "Tasks",
-    tabRewards:       "Rewards",
-    tabSettings:      "Settings",
-    assignedTasks:    "📝 Assigned Tasks",
-    dailyCutoffLabel: "⏰ Daily cutoff time",
-    currentWeekLabel: "📅 Current week",
-    weeklyHistoryLabel:"📜 Previous weeks history",
-    badgesLabel:      "🏅 Badges unlocked this week",
-    parentsIntro:     "Parents only area",
-    childManagementLabel:"👨‍👩‍👧‍👦 Child management",
-    addChildBtn:      "Add child",
-    cutoffTimeLabel:  "⏰ Daily cutoff to complete tasks",
-    saveCutoffBtn:    "Save time",
-    pinLabel:         "🔐 Access PIN for settings",
-    savePinBtn:       "Save PIN",
-    pinSavedMsg:      "PIN saved successfully.",
-    taskManagementLabel:"📝 Task management",
-    addTaskBtn:       "Add task",
-    rewardManagementLabel:"🎁 Reward management",
-    addRewardBtn:     "Add reward",
-    closeWeekLabel:   "📅 Close week and save history",
-    closeWeekBtn:     "Close week",
-    closedWeeksLabel: "📜 Closed weeks history",
-    installUpdatesLabel: "Reload latest version of the app",
-    installUpdatesBtn:  "Install updates",
-    resetAppLabel:      "⚠️ Reset app to initial state",
-    resetAppBtn:        "Reset app"
+    appTitle:               "Chore Stars Child",
+    panelSubtitle:          "Task, duty and reward panel for",
+    earnedLabel:            "Earned",
+    lostLabel:              "Lost",
+    redeemedLabel:          "Redeemed",
+    totalLabel:             "Total",
+    tabTasks:               "Tasks",
+    tabRewards:             "Rewards",
+    tabSettings:            "Settings",
+    assignedTasks:          "📝 Assigned Tasks",
+    dailyCutoffLabel:       "⏰ Daily cutoff time",
     todayLabel:             "Today is:",
     cutoffIntro:            "Complete before",
     fromLabel:              "From:",
     toLabel:                "To:",
+    currentWeekLabel:       "📅 Current week",
+    weeklyHistoryLabel:     "📜 Previous weeks history",
     noHistory:              "No history yet.",
+    badgesLabel:            "🏅 Badges unlocked this week",
+    parentsIntro:           "Parents only area",
+    childManagementLabel:   "👨‍👩‍👧‍👦 Child management",
+    addChildBtn:            "Add child",
     childNamePlaceholder:   "Child name",
+    cutoffTimeLabel:        "⏰ Daily cutoff to complete tasks",
+    saveCutoffBtn:          "Save time",
+    pinLabel:               "🔐 Access PIN for settings",
     pinPlaceholder:         "Ex: 1234",
+    savePinBtn:             "Save PIN",
+    pinSavedMsg:            "PIN saved successfully.",
+    taskManagementLabel:    "📝 Task management",
     taskNamePlaceholder:    "Task name",
     taskPointsPlaceholder:  "Points",
+    addTaskBtn:             "Add task",
+    rewardManagementLabel:  "🎁 Reward management",
     rewardNamePlaceholder:  "Reward name",
-    rewardCostPlaceholder:  "Cost"
+    rewardCostPlaceholder:  "Cost",
+    addRewardBtn:           "Add reward",
+    closeWeekLabel:         "📅 Close week and save history",
+    closeWeekBtn:           "Close week",
+    closedWeeksLabel:       "📜 Closed weeks history",
+    installUpdatesLabel:    "Reload latest version of the app",
+    installUpdatesBtn:      "Install updates",
+    resetAppLabel:          "⚠️ Reset app to initial state",
+    resetAppBtn:            "Reset app",
+    languageLabel:          "Language:",
+    welcomeTitle:           "Welcome to Chore Stars Child",
+    welcomeDesc:            "Organize chores and rewards in a fun and safe way.",
+    startButton:            "Start"
   }
 };
 
-// 2) In applyTranslations, add placeholders:
+// 2) Función genérica para texto y placeholders
 function applyTranslations(lang) {
-  document.querySelectorAll("[data-i18n]").forEach(el => {
-    const key = el.dataset.i18n;
-    if (translations[lang]?.[key]) {
-      el.textContent = translations[lang][key];
-    }
+  // textos
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = translations[lang]?.[key];
+    if (txt) el.textContent = txt;
   });
-  document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-    const key = el.dataset.i18nPlaceholder;
-    if (translations[lang]?.[key]) {
-      el.placeholder = translations[lang][key];
-    }
+  // placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const txt = translations[lang]?.[key];
+    if (txt) el.placeholder = txt;
   });
 }
 
-// 4) On load, apply saved lang and hide welcome if done:
-document.addEventListener("DOMContentLoaded", () => {
-  const saved = localStorage.getItem("lang");
+// 3) Al iniciar la app
+document.addEventListener('DOMContentLoaded', () => {
+  // Si ya eligió idioma en bienvenida
+  const saved = localStorage.getItem('lang');
   if (saved) {
     applyTranslations(saved);
-    document.getElementById("welcome-screen").style.display = "none";
+    document.getElementById('welcome-screen').style.display = 'none';
   }
+  
+  // Listener de Bienvenida → guarda idioma y muestra app
+  document.getElementById('welcome-start')
+    .addEventListener('click', () => {
+      const lang = document.getElementById('welcome-lang-select').value;
+      localStorage.setItem('lang', lang);
+      applyTranslations(lang);
+      document.getElementById('welcome-screen').style.display = 'none';
+    });
+  
+  // Listener al selector (si quieres cambiar a mitad)
+  document.getElementById('language-select')
+    ?.addEventListener('change', e => {
+      const lang = e.target.value;
+      localStorage.setItem('lang', lang);
+      applyTranslations(lang);
+    });
+
+  // — aquí va el resto de tu inicialización existente —
 });
