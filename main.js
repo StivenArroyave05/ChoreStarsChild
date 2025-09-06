@@ -52,6 +52,9 @@ const translations = {
     welcomeTitle:           "Bienvenido a Chore Stars Child",
     welcomeDesc:            "Organiza tareas y recompensas de forma divertida y segura.",
     startButton:            "Comenzar"
+    errorNoCutoffField:     "Error: no encontré el campo de hora límite.",
+    invalidTimeMsg:         "❗ Por favor ingresa una hora válida.",
+    cutoffSaved:            "✅ Hora límite guardada: {time}",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -102,6 +105,9 @@ const translations = {
     welcomeTitle:           "Welcome to Chore Stars Child",
     welcomeDesc:            "Organize chores and rewards in a fun and safe way.",
     startButton:            "Start"
+    errorNoCutoffField:     "Error: cutoff time field not found.",
+    invalidTimeMsg:         "❗ Please enter a valid time.",
+    cutoffSaved:            "✅ Cutoff time saved: {time}",
   }
 };
 
@@ -128,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (saved) {
     applyTranslations(saved);
       updateTodayHeader(); 
+      renderCutoffTime();
+      renderWeekStart();
     document.getElementById('welcome-screen').style.display = 'none';
   }
   
@@ -138,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('lang', lang);
       applyTranslations(lang);
       updateTodayHeader(); 
+      renderCutoffTime();
+      renderWeekStart();
       document.getElementById('welcome-screen').style.display = 'none';
     });
   
@@ -148,6 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('lang', lang);
       applyTranslations(lang);
       updateTodayHeader(); 
+      renderCutoffTime();
+      renderWeekStart();
     });
 
   // — aquí va el resto de tu inicialización existente —
@@ -801,30 +813,38 @@ function renderWeeklyHistory() {
 // 11. Visualización de hora de corte y rango de semana
 ////////////////////////////////////////////////////////////////////////////////
 function renderCutoffTime() {
-  // 1) Obtén el valor “HH:mm” o usa 21:00 por defecto
+  // 1) Lee hora guardada o default
   const stored = localStorage.getItem('cutoffTime') || '21:00';
   const [hour, minute] = stored.split(':').map(n => parseInt(n, 10));
 
-  // 2) Crea un Date con esa hora
+  // 2) Crea Date y dale hora
   const dt = new Date();
   dt.setHours(hour, minute, 0, 0);
 
-  // 3) Formatea en 12 h según el locale del navegador
-  const locale  = navigator.language || 'es-CO';
+  // 3) Locale según idioma
+  const lang = localStorage.getItem('lang') || 'es';
+  const locale = lang === 'en' ? 'en-US' : 'es-CO';
+
+  // 4) Formatea en 12h
   const timeStr = dt.toLocaleTimeString(locale, {
-    hour:   'numeric',
-    minute: '2-digit',
-    hour12: true
+    hour: 'numeric', minute: '2-digit', hour12: true
   });
 
-  // 4) Inyecta al DOM manteniendo el <input> en 24 h
-  const displayEl = document.getElementById('cutoff-display');
-  const infoEl    = document.getElementById('cutoff-info');
-  const inputEl   = document.getElementById('cutoff-time');
+  // 5) Etiqueta estática traducible
+  document
+    .querySelectorAll('[data-i18n="cutoffIntro"]')
+    .forEach(el => el.textContent = translations[lang].cutoffIntro);
 
-  if (displayEl) displayEl.textContent = `Completa antes de ${timeStr}`;
-  if (infoEl)    infoEl.textContent    = `Completa antes de ${timeStr}`;
-  if (inputEl)   inputEl.value         = stored;
+  // 6) Inyecta la parte dinámica en su span
+  const disp = document.getElementById('cutoff-time-display');
+  if (disp) disp.textContent = timeStr;
+
+  const info = document.getElementById('cutoff-info-time');
+  if (info) info.textContent = timeStr;
+
+  // 7) Ajusta el input 24h
+  const inputEl = document.getElementById('cutoff-time');
+  if (inputEl) inputEl.value = stored;
 }
 
 // Llamada donde ya lo tenías
@@ -833,19 +853,22 @@ renderCutoffTime();
 
   // 2) Engancho el botón con el mismo ID que tu HTML
   document.getElementById('save-cutoff')?.addEventListener('click', () => {
-    const inputEl = document.getElementById('cutoff-time');
-    if (!inputEl) {
-      return alert('Error: no encontré el campo de hora límite.');
-    }
-    const time = inputEl.value;
-    if (!time) {
-      return alert('❗ Por favor ingresa una hora válida.');
-    }
-    // 3) Persiste y refresca pantallas
-    localStorage.setItem('cutoffTime', time);
-    renderCutoffTime();
-    alert(`✅ Hora límite guardada: ${time}`);
+  const lang = localStorage.getItem('lang') || 'es';
+  const inputEl = document.getElementById('cutoff-time');
+  if (!inputEl) {
+    return alert(translations[lang].errorNoCutoffField);
+  }
+  const time = inputEl.value;
+  if (!time) {
+    return alert(translations[lang].invalidTimeMsg);
+  }
+  localStorage.setItem('cutoffTime', time);
+  renderCutoffTime();
+  // Mensaje final usando plantilla {time}
+  const msg = translations[lang].cutoffSaved.replace('{time}', time);
+  alert(msg);
   });
+ 
 
 function renderWeekStart() {
   const range = getCurrentWeekRange();
