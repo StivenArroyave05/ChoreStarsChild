@@ -36,7 +36,7 @@ function updateHeaderName() {
  * tirando de tu objeto translations según el lang guardado en localStorage.
  */
 function updateTodayHeader() {
-  const el = document.getElementById('today-header');
+  const el = document.getElementById('today-date');
   if (!el) return;
 
   // 1) Determina el locale para formatear la fecha
