@@ -51,7 +51,7 @@ const translations = {
     languageLabel:          "Idioma:",
     welcomeTitle:           "Bienvenido a Chore Stars Child",
     welcomeDesc:            "Organiza tareas y recompensas de forma divertida y segura.",
-    startButton:            "Comenzar"
+    startButton:            "Comenzar",
     errorNoCutoffField:     "Error: no encontré el campo de hora límite.",
     invalidTimeMsg:         "❗ Por favor ingresa una hora válida.",
     cutoffSaved:            "✅ Hora límite guardada: {time}",
@@ -104,7 +104,7 @@ const translations = {
     languageLabel:          "Language:",
     welcomeTitle:           "Welcome to Chore Stars Child",
     welcomeDesc:            "Organize chores and rewards in a fun and safe way.",
-    startButton:            "Start"
+    startButton:            "Start",
     errorNoCutoffField:     "Error: cutoff time field not found.",
     invalidTimeMsg:         "❗ Please enter a valid time.",
     cutoffSaved:            "✅ Cutoff time saved: {time}",
