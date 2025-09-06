@@ -71,7 +71,9 @@ const translations = {
     pinSavedMsg:             "🔐 PIN guardado correctamente.",
     noActivityMsg:           "📭 No hay actividad registrada esta semana.",
     confirmCloseWeek:        "¿Cerrar semana y guardar historial?",
-    weekClosedMsg:           "✅ Semana cerrada y guardada"
+    weekClosedMsg:           "✅ Semana cerrada y guardada",
+    confirmResetApp:        "⚠️ Esto borrará TODOS los datos y recargará la app. ¿Continuar?",
+    resetSuccessMsg:        "✅ Aplicación reiniciada. Comenzando de cero…"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -141,7 +143,9 @@ const translations = {
     pinSavedMsg:             "🔐 PIN saved successfully.",
     noActivityMsg:           "📭 No activity recorded this week.",
     confirmCloseWeek:        "Close week and save history?",
-    weekClosedMsg:           "✅ Week closed and saved"
+    weekClosedMsg:           "✅ Week closed and saved",
+    confirmResetApp:        "⚠️ This will erase ALL data and reload the app. Continue?",
+    resetSuccessMsg:        "✅ App reset. Starting from scratch…"
   }
 };
 
@@ -1208,19 +1212,22 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
 });
 
 
-  // 🔄 Reset completo de la app
-  document.getElementById('reset-app')?.addEventListener('click', () => {
-    // 1) Confirmación
-    const ok = confirm('⚠️ Esto borrará TODOS los datos y recargará la app. ¿Continuar?');
-    if (!ok) return;
+  // 🔄 Reset completo de la app (traducción total)
+document.getElementById('reset-app')?.addEventListener('click', () => {
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
 
-    // 2) Limpia TODO localStorage
-    localStorage.clear();
+  // 1) Confirmación traducida
+  if (!confirm(t.confirmResetApp)) return;
 
-    // 3) Feedback y recarga
-    alert('✅ Aplicación reiniciada. Comenzando de cero…');
-    location.reload();
-  });
+  // 2) Limpia TODO localStorage
+  localStorage.clear();
+
+  // 3) Feedback y recarga traducidos
+  alert(t.resetSuccessMsg);
+  location.reload();
+});
+
 
 
   // 🔐 Navegación con PIN
