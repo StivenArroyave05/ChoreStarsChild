@@ -1,5 +1,5 @@
 // main.js
-
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -167,6 +167,14 @@ function applyTranslations(lang) {
   });
 }
 
+function updateFooterVersion() {
+  const lang = localStorage.getItem("lang") || "es";
+  const template = translations[lang]?.footerText;
+  if (!template) return;
+  const text = template.replace("{version}", APP_VERSION);
+  document.getElementById("app-footer").textContent = text;
+}
+
 // 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
   // — 3.1) Idioma guardado o por defecto
@@ -181,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderWeeklyHistory();
   renderBadges();
   updatePointDisplay();
+  updateFooterVersion();
 
   // — 3.3) Bienvenida: ajustar select y ocultarla si ya hay idioma
   const welcomeSelect = document.getElementById('welcome-lang-select');
@@ -208,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderWeeklyHistory();
     renderBadges();
     updatePointDisplay();
+    updateFooterVersion();
   });
 
   // — 3.6) Selector permanente de idioma
@@ -221,6 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderWeeklyHistory();
     renderBadges();
     updatePointDisplay();
+    updateFooterVersion();
   });
 
   // — aquí va el resto de tu inicialización existente —
