@@ -1,7 +1,7 @@
 // service-worker.js
 
 // 1) Cambia este VERSION cada vez que despliegues (p. ej. 'v2' → 'v3')
-const VERSION        = 'v1.0.1';
+const VERSION        = 'v1.0.2';
 const CACHE_STATIC   = `static-${VERSION}`;
 const CACHE_RUNTIME  = 'runtime-v1';
 
@@ -96,4 +96,3 @@ self.addEventListener('fetch', event => {
   // 2.c) Otros orígenes: network-only
   event.respondWith(fetch(event.request));
 });
-

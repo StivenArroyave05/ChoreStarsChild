@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.1";  // Actualízalo en cada release
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -75,7 +75,9 @@ const translations = {
     confirmResetApp:        "⚠️ Esto borrará TODOS los datos y recargará la app. ¿Continuar?",
     resetSuccessMsg:        "✅ Aplicación reiniciada. Comenzando de cero…",
     swNotRegistered:        "No hay SW registrado.",
-    searchingUpdates:       "Buscando actualizaciones…"
+    searchingUpdates:       "Buscando actualizaciones…",
+    selectChildBtn:         "Seleccionar",
+    deleteChildBtn:         "Eliminar"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -149,7 +151,9 @@ const translations = {
     confirmResetApp:        "⚠️ This will erase ALL data and reload the app. Continue?",
     resetSuccessMsg:        "✅ App reset. Starting from scratch…",
     swNotRegistered:        "No SW registered.",
-    searchingUpdates:       "Searching for updates…",
+    searchingUpdates:       "Searching for updates…"
+    selectChildBtn:         "Select",
+    deleteChildBtn:         "Delete"
   }
 };
 
@@ -311,16 +315,20 @@ function renderChildrenList() {
       li.classList.add('bg-blue-100', 'text-blue-800', 'font-semibold');
     }
 
-    li.innerHTML = `
-      <span>${c.name}</span>
-      <div class="space-x-2">
-        <button class="btn btn-secondary btn-sm select-child" data-id="${c.id}">
-          Seleccionar
-        </button>
-        <button class="btn btn-danger btn-sm delete-child" data-id="${c.id}">
-          Eliminar
-        </button>
-      </div>`;
+const lang = localStorage.getItem('lang') || 'es';
+const t    = translations[lang];
+
+li.innerHTML = `
+  <span>${c.name}</span>
+  <div class="space-x-2">
+    <button class="btn btn-secondary btn-sm select-child" data-id="${c.id}">
+      ${t.selectChildBtn}
+    </button>
+    <button class="btn btn-danger btn-sm delete-child" data-id="${c.id}">
+      ${t.deleteChildBtn}
+    </button>
+  </div>`;
+
 
     ul.appendChild(li);
   });
@@ -1375,5 +1383,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
