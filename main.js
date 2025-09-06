@@ -77,7 +77,10 @@ const translations = {
     swNotRegistered:        "No hay SW registrado.",
     searchingUpdates:       "Buscando actualizaciones…",
     selectChildBtn:         "Seleccionar",
-    deleteChildBtn:         "Eliminar"
+    deleteChildBtn:         "Eliminar",
+    pointsSuffix:           "pts",
+    markDoneBtn:            "Hecho",
+    markedDoneBtn:          "✅ Hecho"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -154,6 +157,9 @@ const translations = {
     searchingUpdates:       "Searching for updates…",
     selectChildBtn:         "Select",
     deleteChildBtn:         "Delete"
+    pointsSuffix:           "pts",
+    markDoneBtn:            "Done",
+    markedDoneBtn:          "✅ Done"
   }
 };
 
@@ -685,45 +691,43 @@ function renderChildTasks() {
   const container = document.getElementById('tasks-list');
   if (!container) return;
 
-  // Limpio el contenedor
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
   container.innerHTML = '';
 
-  // Filtro sólo las tareas del niño seleccionado
   const filtered = tasks.filter(t => t.childId === activeChildId);
 
   filtered.forEach((task, idx) => {
-    // 1) Creo la tarjeta
     const card = document.createElement('div');
     card.className = 'task-card';
 
-    // 2) Label con nombre y puntos
+    // Nombre + puntos con sufijo traducido
     const label = document.createElement('span');
-    label.textContent = `${task.name} (${task.points} pts)`;
+    label.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
 
-    // 3) Botón de "Hecho"
+    // Botón traducido
     const btn = document.createElement('button');
     btn.className = 'btn-success';
-    btn.textContent = task.done ? '✅ Hecho' : 'Hecho';
+    btn.textContent = task.done ? t.markedDoneBtn : t.markDoneBtn;
     btn.disabled   = task.done;
     if (task.done) btn.classList.add('btn-done');
 
-    // 4) Listener para marcar como hecho
     btn.addEventListener('click', () => {
       if (task.done) return;
-      task.done           = true;
+      task.done = true;
+
       const stats = getStatsFor(activeChildId);
       stats.earned += task.points;
       saveStatsMap();
       saveTasks();
       updatePointDisplay();
 
-      // Actualizo UI del botón y contador
-      btn.textContent = '✅ Hecho';
+      btn.textContent = t.markedDoneBtn;
       btn.disabled    = true;
       btn.classList.add('btn-done');
       updatePointDisplay();
 
-      // ✨ Estrella animada
       const sparkle = document.createElement('div');
       sparkle.className   = 'sparkle';
       sparkle.textContent = '🌟';
@@ -731,12 +735,12 @@ function renderChildTasks() {
       setTimeout(() => sparkle.remove(), 800);
     });
 
-    // 5) Componer la tarjeta y añadirla al DOM
     card.appendChild(label);
     card.appendChild(btn);
     container.appendChild(card);
   });
 }
+
 
 function renderRewardsManage() {
   const c = document.getElementById('rewards-manage');
