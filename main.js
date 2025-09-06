@@ -700,6 +700,17 @@ function showTab(tabId) {
   }
 }
 
+
+document.getElementById('welcome-start').addEventListener('click', () => {
+  const welcome = document.getElementById('welcome-screen');
+  welcome.style.display = 'none';
+  // inicia traducción con el idioma elegido
+  const lang = document.getElementById('welcome-lang-select').value;
+  localStorage.setItem('lang', lang);
+  applyTranslations(lang);
+});
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // 13. Inicialización y eventos
 ////////////////////////////////////////////////////////////////////////////////
@@ -1058,6 +1069,9 @@ function sendSkipWaiting(worker) {
 // 1) Traducciones
 const translations = {
   es: {
+    welcomeTitle:      "Bienvenido a Chore Stars Child",
+    welcomeDesc:       "Organiza tareas y recompensas de forma divertida y segura.",
+    startButton:       "Comenzar",
     languageLabel:    "Idioma:",
     appTitle:         "Chore Stars Child",
     panelSubtitle:    "Panel de tareas, deberes y recompensas para",
@@ -1094,6 +1108,9 @@ const translations = {
     resetAppBtn:        "Reiniciar aplicación"
   },
   en: {
+    welcomeTitle:     "Welcome to Chore Stars Child",
+    welcomeDesc:      "Organize chores and rewards in a fun and safe way.",
+    startButton:      "Start",
     languageLabel:    "Language:",
     appTitle:         "Chore Stars Child",
     panelSubtitle:    "Task, duty and reward panel for",

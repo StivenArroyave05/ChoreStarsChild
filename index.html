@@ -13,6 +13,24 @@
 </head>
 <body class="bg-blue-50 min-h-screen flex flex-col font-sans">
 
+  <!-- Pantalla de bienvenida -->
+  <div id="welcome-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4">
+    <h1 class="text-3xl font-extrabold mb-4" data-i18n="welcomeTitle">Bienvenido a Chore Stars Child</h1>
+    <p class="text-center mb-6" data-i18n="welcomeDesc">
+      Organiza tareas y recompensas de forma divertida y segura.
+    </p>
+    <div class="mb-6">
+      <label for="welcome-lang-select" class="mr-2" data-i18n="languageLabel">Idioma:</label>
+      <select id="welcome-lang-select" class="border rounded px-2 py-1">
+        <option value="es">Español</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <button id="welcome-start" class="btn btn-primary px-6 py-2" data-i18n="startButton">
+      Comenzar
+    </button>
+  </div>
+
   <!-- Header -->
   <header class="app-header">
     <div class="header-info flex items-center">
@@ -37,15 +55,6 @@
       <p class="total">⭐ <span data-i18n="totalLabel">Totales</span>: <span id="points-total">0</span></p>
     </div>
   </header>
-
-  <!-- Language selector -->
-  <div id="language-selector" class="text-center mt-4">
-    <label for="language-select" data-i18n="languageLabel">Idioma:</label>
-    <select id="language-select" class="ml-2 border rounded px-2 py-1">
-      <option value="es">Español</option>
-      <option value="en">English</option>
-    </select>
-  </div>
 
   <!-- Tabs -->
   <nav class="app-nav">
