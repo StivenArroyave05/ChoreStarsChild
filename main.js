@@ -1186,14 +1186,6 @@ function applyTranslations(lang) {
   });
 }
 
-// 3) On welcome “Comenzar”:
-document.getElementById("welcome-start").addEventListener("click", () => {
-  const lang = document.getElementById("welcome-lang-select").value;
-  localStorage.setItem("lang", lang);
-  applyTranslations(lang);
-  document.getElementById("welcome-screen").style.display = "none";
-});
-
 // 4) On load, apply saved lang and hide welcome if done:
 document.addEventListener("DOMContentLoaded", () => {
   const saved = localStorage.getItem("lang");
