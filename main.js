@@ -57,7 +57,7 @@ const translations = {
     cutoffSaved:            "✅ Hora límite guardada: {time}",
     constantEffort:         "Esfuerzo constante",
     rewardExplorer:         "Explorador recompensas",
-    totalDiscipline:        "Disciplina total"
+    totalDiscipline:        "Disciplina total",
     footerText:             "Chore Stars Child - Todos los derechos reservados - 2025"
   },
   en: {
@@ -114,7 +114,7 @@ const translations = {
     cutoffSaved:            "✅ Cutoff time saved: {time}",
     constantEffort:         "Consistent effort",
     rewardExplorer:         "Reward explorer",
-    totalDiscipline:        "Total discipline"
+    totalDiscipline:        "Total discipline",
     footerText:             "Chore Stars Child - All rights reserved - 2025"
   }
 };
