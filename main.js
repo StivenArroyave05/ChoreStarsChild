@@ -58,7 +58,15 @@ const translations = {
     constantEffort:         "Esfuerzo constante",
     rewardExplorer:         "Explorador recompensas",
     totalDiscipline:        "Disciplina total",
-    footerText:             "Chore Stars Child - Todos los derechos reservados - 2025"
+    footerText:             "Chore Stars Child - Todos los derechos reservados - 2025",
+    invalidChildName:        "❗ Ingresa un nombre válido",
+    confirmDeleteChild:      "¿Eliminar a \"{name}\"?",
+    createTaskInstructions:  "Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionará por defecto, 3. Puedes agregar tareas a cada niño seleccionado de manera independiente.",
+    promptNewTaskName:       "Nuevo nombre de la tarea:",
+    promptNewTaskPoints:     "Nuevos puntos:",
+    invalidRewardNameCost:   "Completa nombre y costo válido",
+    promptNewRewardName:     "Nuevo nombre de la recompensa:",
+    promptNewRewardCost:     "Nuevo coste en puntos:"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -115,7 +123,15 @@ const translations = {
     constantEffort:         "Consistent effort",
     rewardExplorer:         "Reward explorer",
     totalDiscipline:        "Total discipline",
-    footerText:             "Chore Stars Child - All rights reserved - 2025"
+    footerText:             "Chore Stars Child - All rights reserved - 2025",
+    invalidChildName:        "❗ Enter a valid name",
+    confirmDeleteChild:      "Delete \"{name}\"?",
+    createTaskInstructions:  "To create tasks: 1. Enter and save the child’s name, 2. Select a child or it will default if there’s only one, 3. You can add tasks for each selected child independently.",
+    promptNewTaskName:       "New task name:",
+    promptNewTaskPoints:     "New points:",
+    invalidRewardNameCost:   "Enter a valid name and cost",
+    promptNewRewardName:     "New reward name:",
+    promptNewRewardCost:     "New cost in points:"
   }
 };
 
@@ -964,157 +980,173 @@ window.addEventListener('DOMContentLoaded', () => {
 
 
   // ➕ Evento Añadir Niño
-  document.getElementById('add-child')?.addEventListener('click', () => {
-    const input = document.getElementById('new-child-name');
-    const name  = input.value.trim();
-    if (!name) return alert('❗ Ingresa un nombre válido');
+document.getElementById('add-child')?.addEventListener('click', () => {
+  const lang = localStorage.getItem('lang') || 'es';
+  const input = document.getElementById('new-child-name');
+  const name  = input.value.trim();
+  if (!name) {
+    return alert(translations[lang].invalidChildName);
+  }
 
-    const id = Date.now().toString();
-    children.push({ id, name });
-    saveChildren();
-    renderChildrenList();
+  const id = Date.now().toString();
+  children.push({ id, name });
+  saveChildren();
+  renderChildrenList();
+  selectChild(id);
+  input.value = '';
+});
+
+// ➖ Evento Seleccionar / Eliminar Niño
+document.getElementById('children-list')?.addEventListener('click', e => {
+  const lang = localStorage.getItem('lang') || 'es';
+  const id = e.target.dataset.id;
+
+  if (e.target.classList.contains('select-child')) {
     selectChild(id);
-    input.value = '';
-  });
+  }
 
-  // ➖ Evento Seleccionar / Eliminar Niño
-  document.getElementById('children-list')?.addEventListener('click', e => {
-    const id = e.target.dataset.id;
-    if (e.target.classList.contains('select-child')) {
-      selectChild(id);
+  if (e.target.classList.contains('delete-child')) {
+    const childName = children.find(c => c.id === id).name;
+    const msg = translations[lang].confirmDeleteChild.replace('{name}', childName);
+    if (!confirm(msg)) return;
+
+    children = children.filter(c => c.id !== id);
+    saveChildren();
+
+    tasks = tasks.filter(t => t.childId !== id);
+    saveTasks();
+
+    if (activeChildId === id) {
+      activeChildId = children[0]?.id || null;
     }
-    if (e.target.classList.contains('delete-child')) {
-      if (!confirm(`¿Eliminar a "${children.find(c=>c.id===id).name}"?`))
-        return;
-      children = children.filter(c => c.id !== id);
-      saveChildren();
-      // Limpio también sus tareas
-      tasks = tasks.filter(t => t.childId !== id);
-      saveTasks();
-      // Si borré al activo, selecciono otro
-      if (activeChildId === id) {
-        activeChildId = children[0]?.id || null;
+
+    renderChildrenList();
+    renderChildTabs();
+    renderTasks();
+    renderChildTasks();
+    updatePointDisplay();
+  }
+});
+
+// ➕ Evento Añadir Tarea
+document.getElementById('add-task')?.addEventListener('click', () => {
+  const lang = localStorage.getItem('lang') || 'es';
+  const nameInput = document.getElementById('new-task-name');
+  const ptsInput  = document.getElementById('new-task-points');
+  const name      = nameInput.value.trim();
+  const points    = parseInt(ptsInput.value, 10);
+
+  if (!name || isNaN(points) || !activeChildId) {
+    return alert(translations[lang].createTaskInstructions);
+  }
+
+  tasks.push({
+    name,
+    points,
+    done: false,
+    penalized: false,
+    childId: activeChildId
+  });
+  saveTasks();
+  renderTasks();
+  renderChildTasks();
+  updatePointDisplay();
+
+  nameInput.value = '';
+  ptsInput.value  = '';
+});
+
+// — Editar / Eliminar tarea
+document.getElementById('tasks-manage')?.addEventListener('click', e => {
+  const lang = localStorage.getItem('lang') || 'es';
+
+  // Editar tarea
+  if (e.target.matches('.btn-edit')) {
+    const idx     = parseInt(e.target.dataset.index, 10);
+    const visible = tasks.filter(t => t.childId === activeChildId);
+    const task    = visible[idx];
+
+    const newName = prompt(translations[lang].promptNewTaskName, task.name);
+    if (newName) {
+      task.name = newName;
+      const newPts = prompt(translations[lang].promptNewTaskPoints, task.points);
+      if (!isNaN(parseInt(newPts, 10))) {
+        task.points = parseInt(newPts, 10);
       }
-      renderChildrenList();
-      renderChildTabs();
+      saveTasks();
       renderTasks();
       renderChildTasks();
       updatePointDisplay();
     }
-  });
+    return;
+  }
 
-  // ➕ Evento Añadir Tarea (ahora asigna childId)
-  document.getElementById('add-task')?.addEventListener('click', () => {
-    const nameInput   = document.getElementById('new-task-name');
-    const ptsInput    = document.getElementById('new-task-points');
-    const name        = nameInput.value.trim();
-    const points      = parseInt(ptsInput.value, 10);
-    if (!name || isNaN(points) || !activeChildId) {
-      return alert('Para crear tareas: 1. Ingresa nombre del niño y guárdalo, 2. Selecciona un niño o si es solo uno se seleccionara por defecto, 3.Puedes agregar tareas a cada niño seleccionado de manera independiente.');
-    }
-    tasks.push({
-      name,
-      points,
-      done: false,
-      penalized: false,
-      childId: activeChildId   // **importante**
-    });
+  // Eliminar tarea
+  if (e.target.matches('.btn-danger')) {
+    const idx = parseInt(e.target.dataset.index, 10);
+    tasks.splice(idx, 1);
     saveTasks();
     renderTasks();
     renderChildTasks();
     updatePointDisplay();
+  }
+});
 
-  // Limpia campos
-  nameInput.value = '';
-  ptsInput.value = '';
-  });
+// ➕ Agregar Recompensa
+document.getElementById('add-reward')?.addEventListener('click', () => {
+  const lang     = localStorage.getItem('lang') || 'es';
+  const nameInput = document.getElementById('new-reward-name');
+  const costInput = document.getElementById('new-reward-cost');
+  const name      = nameInput.value.trim();
+  const cost      = parseInt(costInput.value, 10);
 
-
-  document.getElementById('tasks-manage')?.addEventListener('click', e => {
-  // — Editar tarea —
-  if (e.target.matches('.btn-edit')) {
-    const i = parseInt(e.target.dataset.index, 10);
-    // Filtro la lista visible para mapear índices correctos
-    const visible = tasks.filter(t => t.childId === activeChildId);
-    const task    = visible[i];
-    const newName = prompt('Nuevo nombre de la tarea:', task.name);
-    if (newName) {
-      task.name = newName;
-      const newPts = prompt('Nuevos puntos:', task.points);
-      if (!isNaN(parseInt(newPts,10))) {
-        task.points = parseInt(newPts,10);
-      }
-      saveTasks();
-      renderTasks();      // refresca Configuración
-      renderChildTasks(); // refresca Tasks del niño
-      updatePointDisplay();
-    }
-    return;
+  if (!name || isNaN(cost)) {
+    return alert(translations[lang].invalidRewardNameCost);
   }
 
-  // ➖ Eliminar tarea
-    if (e.target.matches('.btn-danger')) {
-      const i = parseInt(e.target.dataset.index, 10);
-      tasks.splice(i, 1);
-      saveTasks();
-      renderTasks();
-      renderChildTasks();
-      updatePointDisplay();
-    }
-  });
+  rewards.push({ name, cost });
+  saveRewards();
+  renderRewardsManage();
+  renderChildRewards();
+  updatePointDisplay();
 
-  // ➕ Agregar recompensa
-  document.getElementById('add-reward')?.addEventListener('click', () => {
-    const nameInput  = document.getElementById('new-reward-name');
-    const costInput  = document.getElementById('new-reward-cost');
-    const name       = nameInput?.value.trim();
-    const cost       = parseInt(costInput?.value, 10);
-
-    if (!name || isNaN(cost)) {
-      return alert('Completa nombre y costo válido');
-    }
-
-    rewards.push({ name, cost });
-    saveRewards();
-    renderRewardsManage();
-    renderChildRewards();
-    updatePointDisplay();
-
-  // Limpia campos
   nameInput.value = '';
   costInput.value = '';
-  });
+});
 
+// — Editar / Eliminar recompensa
+document.getElementById('rewards-manage')?.addEventListener('click', e => {
+  const lang = localStorage.getItem('lang') || 'es';
 
-  document.getElementById('rewards-manage')?.addEventListener('click', e => {
-  // — editar recompensa —
+  // Editar
   if (e.target.matches('.btn-edit')) {
-    const i = parseInt(e.target.dataset.index, 10);
-    const reward = rewards[i];
-    const newName = prompt('Nuevo nombre de la recompensa:', reward.name);
+    const idx       = parseInt(e.target.dataset.index, 10);
+    const reward    = rewards[idx];
+    const newName   = prompt(translations[lang].promptNewRewardName, reward.name);
     if (newName) {
       reward.name = newName;
-      const newCost = prompt('Nuevo coste en puntos:', reward.cost);
-      if (!isNaN(parseInt(newCost,10))) {
-        reward.cost = parseInt(newCost,10);
+      const newCost = prompt(translations[lang].promptNewRewardCost, reward.cost);
+      if (!isNaN(parseInt(newCost, 10))) {
+        reward.cost = parseInt(newCost, 10);
       }
-      saveRewards();
-      renderRewardsManage();  // refresca Configuración
-      renderChildRewards();   // refresca Rewards del niño
-      updatePointDisplay();
-    }
-    return;
-  }
-
-  // ➖ Eliminar recompensa
-    if (e.target.matches('.btn-danger')) {
-      rewards.splice(parseInt(e.target.dataset.index, 10), 1);
       saveRewards();
       renderRewardsManage();
       renderChildRewards();
       updatePointDisplay();
     }
-  });
+    return;
+  }
+
+  // Eliminar
+  if (e.target.matches('.btn-danger')) {
+    rewards.splice(parseInt(e.target.dataset.index, 10), 1);
+    saveRewards();
+    renderRewardsManage();
+    renderChildRewards();
+    updatePointDisplay();
+  }
+});
+
 
   // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
@@ -1230,7 +1262,6 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
     }
   });
 
-  // 🚀 Service Worker PWA
   // 🚀 Service Worker PWA con auto-update
   if ('serviceWorker' in navigator) {
     // Registramos tras el load para garantizar que todo está listo
