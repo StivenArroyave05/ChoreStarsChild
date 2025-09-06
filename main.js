@@ -138,7 +138,7 @@ const translations = {
     promptNewRewardName:     "New reward name:",
     promptNewRewardCost:     "New cost in points:",
     invalidPinMsg:           "❗ Please enter a valid PIN",
-    pinSavedMsg:             "🔐 PIN saved successfully."
+    pinSavedMsg:             "🔐 PIN saved successfully.",
     noActivityMsg:           "📭 No activity recorded this week.",
     confirmCloseWeek:        "Close week and save history?",
     weekClosedMsg:           "✅ Week closed and saved"
