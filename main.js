@@ -770,46 +770,55 @@ function handleRewardRedemption(index) {
  * Muestra en cada lista (Tasks y Settings) solo los cierres del niño activo
  */
 function renderWeeklyHistory() {
-  ['weekly-history-list', 'closed-weeks-history'].forEach(id => {
-    const c = document.getElementById(id);
-    if (!c) return;
-    c.innerHTML = '';
+  const lang   = localStorage.getItem('lang') || 'es';
+  const locale = lang === 'en' ? 'en-US' : 'es-CO';
 
-    // 1) Solo las entradas de este niño
-    const historyForChild = weeklyHistory
-      .filter(h => h.childId === activeChildId);
+  ['weekly-history-list', 'closed-weeks-history'].forEach(id => {
+    const container = document.getElementById(id);
+    if (!container) return;
+    container.innerHTML = '';
+
+    // 1) Filtra solo el historial del niño activo
+    const historyForChild = weeklyHistory.filter(h => h.childId === activeChildId);
 
     // 2) Caso sin historial
     if (historyForChild.length === 0) {
       const p = document.createElement('p');
       p.className = 'text-gray-500';
-      p.textContent = 'No hay semanas cerradas aún.';
-      c.appendChild(p);
+      p.textContent = translations[lang].noHistory;
+      container.appendChild(p);
       return;
     }
 
-    // 3) Pintar últimas 5 entradas (más recientes primero)
+    // 3) Renderiza últimas 5 entradas (más recientes primero)
     historyForChild
       .slice(-5)
       .reverse()
       .forEach(w => {
-        const date  = new Date(w.timestamp).toLocaleDateString();
+        // formatea la fecha según locale
+        const dateStr = new Date(w.timestamp).toLocaleDateString(locale, {
+          weekday: 'short',
+          year:    'numeric',
+          month:   'long',
+          day:     'numeric'
+        });
+
         const entry = document.createElement('div');
         entry.className = 'week-entry';
-
         entry.innerHTML = `
           <p class="font-semibold">
-            ${w.weekLabel} <span class="text-sm text-gray-500">(${date})</span>
+            ${w.weekLabel} <span class="text-sm text-gray-500">(${dateStr})</span>
           </p>
           <p class="text-sm text-gray-600">
-            ⭐ Ganadas: ${w.earned} |
-            ❌ Perdidas: ${w.lost} |
-            🎁 Canjeadas: ${w.redeemed}
+            ⭐ ${translations[lang].earnedLabel}: ${w.earned} |
+            ❌ ${translations[lang].lostLabel}: ${w.lost} |
+            🎁 ${translations[lang].redeemedLabel}: ${w.redeemed}
           </p>`;
-        c.appendChild(entry);
+        container.appendChild(entry);
       });
   });
 }
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
