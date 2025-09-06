@@ -82,7 +82,10 @@ const translations = {
     markDoneBtn:            "Hecho",
     markedDoneBtn:          "✅ Hecho",
     deleteRewardBtn:        "Eliminar",
-    penaltyAppliedMsg:      "⚠️ Penalización aplicada"
+    penaltyAppliedMsg:      "⚠️ Penalización aplicada",
+    shareTitle:             "Recompensa canjeada",
+    shareTextTemplate:      "¡{child} acaba de canjear \"{reward}\" en Chore Stars! 🎉",
+    clipboardCopiedMsg:     "Texto copiado al portapapeles",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -163,7 +166,10 @@ const translations = {
     markDoneBtn:            "Done",
     markedDoneBtn:          "✅ Done",
     deleteRewardBtn:        "Delete",
-    penaltyAppliedMsg:      "⚠️ Penalty applied"
+    penaltyAppliedMsg:      "⚠️ Penalty applied",
+    shareTitle:             "Reward redeemed",
+    shareTextTemplate:      "{child} just redeemed \"{reward}\" in Chore Stars! 🎉",
+    clipboardCopiedMsg:     "Text copied to clipboard"
   }
 };
 
@@ -644,29 +650,33 @@ function applyDailyPenalties() {
  * Si falla, copia al portapapeles y muestra un flash.
  */
 function shareReward(rewardName) {
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
   // 1) Buscamos al niño activo
   const child = children.find(c => c.id === activeChildId);
-  const childName = child ? child.name : 'Alguien';
+  const childName = child ? child.name : (lang === 'en' ? 'Someone' : 'Alguien');
 
   // 2) Preparamos el texto a compartir
-  const text = `¡${childName} acaba de canjear "${rewardName}" en Chore Stars! 🎉`;
+  const text = t.shareTextTemplate
+    .replace('{child}', childName)
+    .replace('{reward}', rewardName);
 
   // 3) Si el navegador soporta Web Share API...
   if (navigator.share) {
     navigator
       .share({
-        title: 'Recompensa canjeada',
+        title: t.shareTitle,
         text
       })
       .catch(() => {
-        // fallback: copia al portapapeles
         navigator.clipboard.writeText(text);
-        flashMessage('Texto copiado al portapapeles');
+        flashMessage(t.clipboardCopiedMsg);
       });
   } else {
     // 4) Fallback puro: copia y notifica
     navigator.clipboard.writeText(text);
-    flashMessage('Texto copiado al portapapeles');
+    flashMessage(t.clipboardCopiedMsg);
   }
 }
 
