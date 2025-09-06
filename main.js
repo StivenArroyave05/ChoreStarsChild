@@ -86,6 +86,10 @@ const translations = {
     shareTitle:             "Recompensa canjeada",
     shareTextTemplate:      "¡{child} acaba de canjear \"{reward}\" en Chore Stars! 🎉",
     clipboardCopiedMsg:     "Texto copiado al portapapeles",
+    redeemedByLabel:        "Canjeada por {name}",
+    shareBtnLabel:          "Compartir",
+    redeemBtnLabel:         "Canjear",
+    unknownChild:           "alguien",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -169,7 +173,11 @@ const translations = {
     penaltyAppliedMsg:      "⚠️ Penalty applied",
     shareTitle:             "Reward redeemed",
     shareTextTemplate:      "{child} just redeemed \"{reward}\" in Chore Stars! 🎉",
-    clipboardCopiedMsg:     "Text copied to clipboard"
+    clipboardCopiedMsg:     "Text copied to clipboard",
+    redeemedByLabel:        "Redeemed by {name}",
+    shareBtnLabel:          "Share",
+    redeemBtnLabel:         "Redeem",
+    unknownChild:           "someone"
   }
 };
 
@@ -796,43 +804,46 @@ function renderRewardsManage() {
 function renderChildRewards() {
   const c = document.getElementById('rewards-list');
   if (!c) return;
+
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
   c.innerHTML = '';
 
   rewards.forEach((r, i) => {
     const block = document.createElement('div');
     block.className = 'reward-block';
 
-    // Si ya fue canjeada, le añadimos el modifier
     if (r.redeemed) {
       block.classList.add('redeemed');
     }
 
-    // Nombre y costo
+    // Nombre y costo traducido
     const span = document.createElement('span');
-    span.textContent = `${r.name} (${r.cost} pts)`;
-
+    span.textContent = `${r.name} (${r.cost} ${t.pointsSuffix})`;
     block.appendChild(span);
 
     if (r.redeemed) {
-      // Etiqueta “Canjeada por [Niño]”
+      // Etiqueta “Canjeada por [Niño]” traducida
       const child = children.find(c => c.id === r.redeemedBy);
+      const name  = child?.name || t.unknownChild;
       const label = document.createElement('span');
       label.className = 'text-green-800 ml-4';
-      label.textContent = `Canjeada por ${child?.name || 'alguien'}`;
+      label.textContent = t.redeemedByLabel.replace('{name}', name);
       block.appendChild(label);
 
-      // Botón Compartir siempre visible
+      // Botón Compartir traducido
       const shareBtn = document.createElement('button');
       shareBtn.className   = 'share-btn';
-      shareBtn.textContent = 'Compartir';
+      shareBtn.textContent = t.shareBtnLabel;
       shareBtn.addEventListener('click', () => shareReward(r.name));
       block.appendChild(shareBtn);
 
     } else {
-      // Botón Canjear
+      // Botón Canjear traducido
       const btn = document.createElement('button');
       btn.className     = 'btn-primary';
-      btn.textContent   = 'Canjear';
+      btn.textContent   = t.redeemBtnLabel;
       btn.dataset.index = i;
       btn.addEventListener('click', () => handleRewardRedemption(i));
       block.appendChild(btn);
