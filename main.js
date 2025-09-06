@@ -136,7 +136,7 @@ function applyTranslations(lang) {
 // 3) Al iniciar la app
 document.addEventListener('DOMContentLoaded', () => {
   // Si ya eligió idioma en bienvenida
-  const saved = localStorage.getItem('lang');
+  const saved = localStorage.getItem('lang') || 'es';
   if (saved) {
     applyTranslations(saved);
       updateTodayHeader(); 
@@ -145,15 +145,31 @@ document.addEventListener('DOMContentLoaded', () => {
       renderWeeklyHistory();
       renderBadges();
       updatePointDisplay();
+  const welcomeSelect = document.getElementById('welcome-lang-select');
+  if (welcomeSelect) {
+    welcomeSelect.value = saved;
+  }
+  if (localStorage.getItem('lang')) {
     document.getElementById('welcome-screen').style.display = 'none';
   }
+
+// Cuando cambias el idioma en la pantalla de bienvenida,
+// reaplicamos la traducción sin ocultar aún el welcome-screen.
+  document.getElementById('welcome-lang-select')
+    ?.addEventListener('change', e => {
+      const lang = e.target.value;
+      applyTranslations(lang);
+  });
+
   
   // Listener de Bienvenida → guarda idioma y muestra app
-  document.getElementById('welcome-start')
+    document.getElementById('welcome-start')
     .addEventListener('click', () => {
       const lang = document.getElementById('welcome-lang-select').value;
       localStorage.setItem('lang', lang);
       applyTranslations(lang);
+      document.getElementById('welcome-screen').style.display = 'none';
+
       updateTodayHeader(); 
       renderCutoffTime();
       renderWeekStart();
