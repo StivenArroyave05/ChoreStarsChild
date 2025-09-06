@@ -55,6 +55,9 @@ const translations = {
     errorNoCutoffField:     "Error: no encontré el campo de hora límite.",
     invalidTimeMsg:         "❗ Por favor ingresa una hora válida.",
     cutoffSaved:            "✅ Hora límite guardada: {time}",
+    constantEffort:         "Esfuerzo constante",
+    rewardExplorer:         "Explorador recompensas",
+    totalDiscipline:        "Disciplina total"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -108,6 +111,9 @@ const translations = {
     errorNoCutoffField:     "Error: cutoff time field not found.",
     invalidTimeMsg:         "❗ Please enter a valid time.",
     cutoffSaved:            "✅ Cutoff time saved: {time}",
+    constantEffort:         "Consistent effort",
+    rewardExplorer:         "Reward explorer",
+    totalDiscipline:        "Total discipline"
   }
 };
 
@@ -137,6 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCutoffTime();
       renderWeekStart();
       renderWeeklyHistory();
+      renderBadges();
+      updatePointDisplay();
     document.getElementById('welcome-screen').style.display = 'none';
   }
   
@@ -150,6 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCutoffTime();
       renderWeekStart();
       renderWeeklyHistory();
+      renderBadges();
+      updatePointDisplay();
       document.getElementById('welcome-screen').style.display = 'none';
     });
   
@@ -163,6 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCutoffTime();
       renderWeekStart();
       renderWeeklyHistory();
+      renderBadges();
+      updatePointDisplay();
     });
 
   // — aquí va el resto de tu inicialización existente —
@@ -348,43 +360,45 @@ const saveHistory = () =>
 // 3. Insignias (badges) por niño
 ////////////////////////////////////////////////////////////////////////////////
 function generateBadges() {
-  // 1) Obtén las stats del niño activo
   const stats = getStatsFor(activeChildId);
   badges = [];
 
-  // 2) Condiciones y push con campo “label”
+  // Detecta idioma y sacamos el namespace
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
+  // Revisamos las condiciones y usamos t.constantEffort, etc.
   if (stats.earned >= 300) {
     badges.push({
       icon:  '🥇',
-      label: 'Esfuerzo constante',
+      label: t.constantEffort,
       bonus: 30
     });
   }
   if (stats.redeemed > 800) {
     badges.push({
       icon:  '🚀',
-      label: 'Explorador recompensas',
+      label: t.rewardExplorer,
       bonus: 50
     });
   }
   if (stats.lost === 0 && stats.earned > 800) {
     badges.push({
       icon:  '🧠',
-      label: 'Disciplina total',
+      label: t.totalDiscipline,
       bonus: 100
     });
   }
 }
+
 
 function renderBadges() {
   const c = document.getElementById('badge-list');
   if (!c) return;
   c.innerHTML = '';
 
-  // 1) Regenera antes las insignias
   generateBadges();
 
-  // 2) Renderiza cada badge usando .label y .bonus
   badges.forEach(b => {
     const card = document.createElement('div');
     card.className =
