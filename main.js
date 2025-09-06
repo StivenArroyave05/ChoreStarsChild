@@ -874,7 +874,7 @@ function renderWeeklyHistory() {
       .slice(-5)
       .reverse()
       .forEach(w => {
-        // formatea la fecha según locale
+        // A) Formatea fecha de cierre
         const dateStr = new Date(w.timestamp).toLocaleDateString(locale, {
           weekday: 'short',
           year:    'numeric',
@@ -882,11 +882,23 @@ function renderWeeklyHistory() {
           day:     'numeric'
         });
 
+        // B) Genera etiqueta de semana traducida
+        const start = new Date(w.startDate).toLocaleDateString(locale, {
+          day: 'numeric', month: 'long'
+        });
+        const end = new Date(w.endDate).toLocaleDateString(locale, {
+          day: 'numeric', month: 'long'
+        });
+        const weekLabel = lang === 'en'
+          ? `Week from ${start} to ${end}`
+          : `Semana del ${start} al ${end}`;
+
+        // C) Renderiza entrada
         const entry = document.createElement('div');
         entry.className = 'week-entry';
         entry.innerHTML = `
           <p class="font-semibold">
-            ${w.weekLabel} <span class="text-sm text-gray-500">(${dateStr})</span>
+            ${weekLabel} <span class="text-sm text-gray-500">(${dateStr})</span>
           </p>
           <p class="text-sm text-gray-600">
             ⭐ ${translations[lang].earnedLabel}: ${w.earned} |
@@ -1201,17 +1213,20 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   // C) Confirmación
   if (!confirm(t.confirmCloseWeek)) return;
 
-  // D) Genera la entrada con childId y sus stats
-  const range = getCurrentWeekRange();
-  weeklyHistory.push({
-    childId:   activeChildId,
-    earned:    stats.earned,
-    lost:      stats.lost,
-    redeemed:  stats.redeemed,
-    weekLabel: range.weekLabel,
-    timestamp: new Date().toISOString()
-  });
-  saveHistory();
+// D) Genera la entrada con childId y sus stats
+const range = getCurrentWeekRange();
+weeklyHistory.push({
+  childId:   activeChildId,
+  earned:    stats.earned,
+  lost:      stats.lost,
+  redeemed:  stats.redeemed,
+  weekLabel: range.weekLabel,         // ← conservas tu etiqueta original
+  startDate: range.startDate,         // ← nuevo campo para traducción dinámica
+  endDate:   range.endDate,           // ← nuevo campo para traducción dinámica
+  timestamp: new Date().toISOString()
+});
+saveHistory();
+
 
   // E) Reinicia SOLO los stats de ese niño y las tareas/recompensas
   weeklyStatsMap[activeChildId] = getDefaultStats();
@@ -1383,5 +1398,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
