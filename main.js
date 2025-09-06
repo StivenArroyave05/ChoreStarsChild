@@ -826,7 +826,9 @@ function renderCutoffTime() {
   const locale = lang === 'en' ? 'en-US' : 'es-CO';
 
   const timeStr = dt.toLocaleTimeString(locale, {
-    hour: 'numeric', minute: '2-digit', hour12: true
+    hour:   'numeric',
+    minute: '2-digit',
+    hour12: true
   });
 
   // etiqueta estática traducible
