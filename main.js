@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('lang');
   if (saved) {
     applyTranslations(saved);
+      updateTodayHeader(); 
     document.getElementById('welcome-screen').style.display = 'none';
   }
   
@@ -136,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const lang = document.getElementById('welcome-lang-select').value;
       localStorage.setItem('lang', lang);
       applyTranslations(lang);
+      updateTodayHeader(); 
       document.getElementById('welcome-screen').style.display = 'none';
     });
   
@@ -145,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const lang = e.target.value;
       localStorage.setItem('lang', lang);
       applyTranslations(lang);
+      updateTodayHeader(); 
     });
 
   // — aquí va el resto de tu inicialización existente —
@@ -182,39 +185,33 @@ function updateHeaderName() {
   if (label) label.textContent = child ? child.name : '';
 }
 
-/**
- * Actualiza en dos pasos:
- *  1) etiqueta traducible (“Hoy es:” / “Today is:”)  
- *  2) fecha formateada según el idioma
- */
 function updateTodayHeader() {
-  // 1) Detecta idioma y locale
-  const lang   = localStorage.getItem('lang') || 'es';
-  const locale = lang === 'en' ? 'en-US' : 'es-CO';
+  // 1) Obtén el idioma activo
+  const lang = localStorage.getItem('lang') || 'es';
+  
+  // 2) Decide el locale para formatear la fecha
+  //    Aquí mapeamos más explícito por si agregas más idiomas
+  const localeMap = { es: 'es-CO', en: 'en-US' };
+  const locale = localeMap[lang] || 'es-CO';
 
-  // 2) Formatea la fecha completa
+  // 3) Formatea la fecha
   const now     = new Date();
-  const options = {
-    weekday: 'long',
-    year:    'numeric',
-    month:   'long',
-    day:     'numeric'
-  };
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   const formattedDate = now.toLocaleDateString(locale, options);
 
-  // 3) Actualiza la etiqueta traducible
-  const labelEl = document.querySelector('#today-header span[data-i18n="todayLabel"]');
+  // 4) Actualiza el label traducible
+  const labelEl = document.querySelector('#today-header [data-i18n="todayLabel"]');
   if (labelEl) {
-    const txt = translations[lang]?.todayLabel || translations.es.todayLabel;
-    labelEl.textContent = txt;
+    labelEl.textContent = translations[lang].todayLabel;
   }
 
-  // 4) Inyecta solo la parte de la fecha
+  // 5) Inyecta SOLO la parte variable (la fecha) en su propio span
   const dateEl = document.getElementById('today-date');
   if (dateEl) {
     dateEl.textContent = formattedDate;
   }
 }
+
 
 function renderChildrenList() {
   const ul = document.getElementById('children-list');
