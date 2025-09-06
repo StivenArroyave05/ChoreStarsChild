@@ -151,7 +151,7 @@ const translations = {
     confirmResetApp:        "⚠️ This will erase ALL data and reload the app. Continue?",
     resetSuccessMsg:        "✅ App reset. Starting from scratch…",
     swNotRegistered:        "No SW registered.",
-    searchingUpdates:       "Searching for updates…"
+    searchingUpdates:       "Searching for updates…",
     selectChildBtn:         "Select",
     deleteChildBtn:         "Delete"
   }
@@ -1383,4 +1383,5 @@ function sendSkipWaiting(worker) {
     }
   });
 }
+
 
