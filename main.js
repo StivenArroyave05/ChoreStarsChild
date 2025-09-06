@@ -80,7 +80,8 @@ const translations = {
     deleteChildBtn:         "Eliminar",
     pointsSuffix:           "pts",
     markDoneBtn:            "Hecho",
-    markedDoneBtn:          "✅ Hecho"
+    markedDoneBtn:          "✅ Hecho",
+    deleteRewardBtn:        "Eliminar"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -159,7 +160,8 @@ const translations = {
     deleteChildBtn:         "Delete",
     pointsSuffix:           "pts",
     markDoneBtn:            "Done",
-    markedDoneBtn:          "✅ Done"
+    markedDoneBtn:          "✅ Done",
+    deleteRewardBtn:        "Delete"
   }
 };
 
@@ -745,18 +747,36 @@ function renderChildTasks() {
 function renderRewardsManage() {
   const c = document.getElementById('rewards-manage');
   if (!c) return;
+
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
   c.innerHTML = '';
+
   rewards.forEach((r, i) => {
-    c.innerHTML += `
-     <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
-      <span>${r.name} (${r.cost} pts)</span>
-      <button class="btn-edit"   data-index="${i}">✏️</button>
-      <button class="btn-danger" data-index="${i}">Eliminar</button>
-     </div>`;
+    const block = document.createElement('div');
+    block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
 
+    const label = document.createElement('span');
+    label.textContent = `${r.name} (${r.cost} ${t.pointsSuffix})`;
 
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit';
+    editBtn.dataset.index = i;
+    editBtn.textContent = '✏️';
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn-danger';
+    deleteBtn.dataset.index = i;
+    deleteBtn.textContent = t.deleteRewardBtn;
+
+    block.appendChild(label);
+    block.appendChild(editBtn);
+    block.appendChild(deleteBtn);
+    c.appendChild(block);
   });
 }
+
 
 function renderChildRewards() {
   const c = document.getElementById('rewards-list');
@@ -1402,5 +1422,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
