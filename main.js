@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTodayHeader(); 
       renderCutoffTime();
       renderWeekStart();
+      renderWeeklyHistory();
     document.getElementById('welcome-screen').style.display = 'none';
   }
   
@@ -148,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTodayHeader(); 
       renderCutoffTime();
       renderWeekStart();
+      renderWeeklyHistory();
       document.getElementById('welcome-screen').style.display = 'none';
     });
   
@@ -160,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateTodayHeader(); 
       renderCutoffTime();
       renderWeekStart();
+      renderWeeklyHistory();
     });
 
   // — aquí va el resto de tu inicialización existente —
@@ -813,41 +816,37 @@ function renderWeeklyHistory() {
 // 11. Visualización de hora de corte y rango de semana
 ////////////////////////////////////////////////////////////////////////////////
 function renderCutoffTime() {
-  // 1) Lee hora guardada o default
   const stored = localStorage.getItem('cutoffTime') || '21:00';
   const [hour, minute] = stored.split(':').map(n => parseInt(n, 10));
 
-  // 2) Crea Date y dale hora
   const dt = new Date();
   dt.setHours(hour, minute, 0, 0);
 
-  // 3) Locale según idioma
-  const lang = localStorage.getItem('lang') || 'es';
+  const lang   = localStorage.getItem('lang') || 'es';
   const locale = lang === 'en' ? 'en-US' : 'es-CO';
 
-  // 4) Formatea en 12h
   const timeStr = dt.toLocaleTimeString(locale, {
     hour: 'numeric', minute: '2-digit', hour12: true
   });
 
-  // 5) Etiqueta estática traducible
+  // etiqueta estática traducible
   document
     .querySelectorAll('[data-i18n="cutoffIntro"]')
     .forEach(el => el.textContent = translations[lang].cutoffIntro);
 
-  // 6) Inyecta la parte dinámica en su span
+  // parte dinámica: solo la hora
   const disp = document.getElementById('cutoff-time-display');
   if (disp) disp.textContent = timeStr;
 
   const info = document.getElementById('cutoff-info-time');
   if (info) info.textContent = timeStr;
 
-  // 7) Ajusta el input 24h
+  // conserva input en 24h
   const inputEl = document.getElementById('cutoff-time');
   if (inputEl) inputEl.value = stored;
 }
 
-// Llamada donde ya lo tenías
+// llamada inicial
 renderCutoffTime();
 
 
@@ -864,11 +863,10 @@ renderCutoffTime();
   }
   localStorage.setItem('cutoffTime', time);
   renderCutoffTime();
-  // Mensaje final usando plantilla {time}
   const msg = translations[lang].cutoffSaved.replace('{time}', time);
   alert(msg);
-  });
- 
+});
+
 
 function renderWeekStart() {
   const range = getCurrentWeekRange();
