@@ -68,7 +68,10 @@ const translations = {
     promptNewRewardName:     "Nuevo nombre de la recompensa:",
     promptNewRewardCost:     "Nuevo coste en puntos:",
     invalidPinMsg:           "❗ Por favor ingresa un PIN válido",
-    pinSavedMsg:             "🔐 PIN guardado correctamente."
+    pinSavedMsg:             "🔐 PIN guardado correctamente.",
+    noActivityMsg:           "📭 No hay actividad registrada esta semana.",
+    confirmCloseWeek:        "¿Cerrar semana y guardar historial?",
+    weekClosedMsg:           "✅ Semana cerrada y guardada"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -136,6 +139,9 @@ const translations = {
     promptNewRewardCost:     "New cost in points:",
     invalidPinMsg:           "❗ Please enter a valid PIN",
     pinSavedMsg:             "🔐 PIN saved successfully."
+    noActivityMsg:           "📭 No activity recorded this week.",
+    confirmCloseWeek:        "Close week and save history?",
+    weekClosedMsg:           "✅ Week closed and saved"
   }
 };
 
@@ -1152,19 +1158,21 @@ document.getElementById('rewards-manage')?.addEventListener('click', e => {
 });
 
 
-  // 🔄 Cerrar semana
 document.getElementById('reset-week')?.addEventListener('click', () => {
-  // A) Verifica actividad
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
   const stats = getStatsFor(activeChildId);
+
+  // A) Verifica actividad
   if (stats.earned === 0 && stats.lost === 0 && stats.redeemed === 0) {
-    return alert('📭 No hay actividad registrada esta semana.');
+    return alert(t.noActivityMsg);
   }
 
-  // B) Regla de cierre
+  // B) Regla de cierre (ya maneja sus propios alerts)
   if (!canCloseWeek()) return;
 
   // C) Confirmación
-  if (!confirm('¿Cerrar semana y guardar historial?')) return;
+  if (!confirm(t.confirmCloseWeek)) return;
 
   // D) Genera la entrada con childId y sus stats
   const range = getCurrentWeekRange();
@@ -1179,11 +1187,8 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   saveHistory();
 
   // E) Reinicia SOLO los stats de ese niño y las tareas/recompensas
-  // Reiniciamos el objeto en el mapa
   weeklyStatsMap[activeChildId] = getDefaultStats();
   saveStatsMap();
-
-  // Eliminamos solo las tareas y recompensas de ese child
   tasks   = tasks.filter(t => t.childId !== activeChildId);
   rewards = rewards.filter(r => r.childId !== activeChildId);
   saveTasks();
@@ -1195,11 +1200,13 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
-  renderWeeklyHistory(); // ahora verá la nueva entrada
+  renderWeeklyHistory();
   showTab('tasks');
 
-  alert('✅ Semana cerrada y guardada');
+  // G) Notificación final traducida
+  alert(t.weekClosedMsg);
 });
+
 
   // 🔄 Reset completo de la app
   document.getElementById('reset-app')?.addEventListener('click', () => {
