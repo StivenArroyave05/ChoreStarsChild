@@ -720,14 +720,6 @@ window.addEventListener('DOMContentLoaded', () => {
   updatePointDisplay();
   showTab('tasks');
 
-// Dentro de window.addEventListener('DOMContentLoaded', …)
-document
-  .getElementById('install-updates')
-  ?.addEventListener('click', () => {
-    triggerServiceWorkerUpdate();
-    // opcional: feedback al usuario
-    flashMessage('Buscando actualizaciones…');
-  });
 
 
   // ➕ Evento Añadir Niño
