@@ -153,6 +153,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('welcome-screen').style.display = 'none';
   }
 
+  }
+
 // Cuando cambias el idioma en la pantalla de bienvenida,
 // reaplicamos la traducción sin ocultar aún el welcome-screen.
   document.getElementById('welcome-lang-select')
