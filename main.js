@@ -871,10 +871,24 @@ renderCutoffTime();
 
 
 function renderWeekStart() {
-  const range = getCurrentWeekRange();
-  const el    = document.getElementById('week-start');
-  if (el) el.textContent = `Desde: ${range.startDate} — Hasta: ${range.endDate}`;
+  const lang = localStorage.getItem('lang') || 'es';
+  const locale = lang === 'en' ? 'en-US' : 'es-CO';
+
+  const { startDate, endDate } = getCurrentWeekRange();
+
+  // 1) Actualiza etiquetas
+  document.querySelectorAll('[data-i18n="fromLabel"]')
+    .forEach(el => el.textContent = translations[lang].fromLabel);
+  document.querySelectorAll('[data-i18n="toLabel"]')
+    .forEach(el => el.textContent = translations[lang].toLabel);
+
+  // 2) Inyecta fechas
+  const startEl = document.getElementById('week-start');
+  const endEl   = document.getElementById('week-end');
+  if (startEl) startEl.textContent = startDate;
+  if (endEl)   endEl.textContent   = endDate;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // 12. Navegación por pestañas
