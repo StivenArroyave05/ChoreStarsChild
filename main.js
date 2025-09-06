@@ -66,7 +66,9 @@ const translations = {
     promptNewTaskPoints:     "Nuevos puntos:",
     invalidRewardNameCost:   "Completa nombre y costo válido",
     promptNewRewardName:     "Nuevo nombre de la recompensa:",
-    promptNewRewardCost:     "Nuevo coste en puntos:"
+    promptNewRewardCost:     "Nuevo coste en puntos:",
+    invalidPinMsg:           "❗ Por favor ingresa un PIN válido",
+    pinSavedMsg:             "🔐 PIN guardado correctamente."
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -131,7 +133,9 @@ const translations = {
     promptNewTaskPoints:     "New points:",
     invalidRewardNameCost:   "Enter a valid name and cost",
     promptNewRewardName:     "New reward name:",
-    promptNewRewardCost:     "New cost in points:"
+    promptNewRewardCost:     "New cost in points:",
+    invalidPinMsg:           "❗ Please enter a valid PIN",
+    pinSavedMsg:             "🔐 PIN saved successfully."
   }
 };
 
@@ -1252,15 +1256,22 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   }
 
 
-  // 🔐 Guardar PIN
-  document.getElementById('save-pin')?.addEventListener('click', () => {
-    const input = document.getElementById('pin-input');
-    const v     = input?.value.trim();
-    if (v) {
-      localStorage.setItem('pin', v);
-      alert('✅ PIN guardado');
-    }
-  });
+// 🔐 Guardar PIN (traducción completa)
+document.getElementById('save-pin')?.addEventListener('click', () => {
+  const lang  = localStorage.getItem('lang') || 'es';
+  const input = document.getElementById('pin-input');
+  const v     = input?.value.trim();
+
+  // 1) Validación
+  if (!v) {
+    return alert(translations[lang].invalidPinMsg);
+  }
+
+  // 2) Persiste y notifica en el idioma activo
+  localStorage.setItem('pin', v);
+  alert(translations[lang].pinSavedMsg);
+});
+
 
   // 🚀 Service Worker PWA con auto-update
   if ('serviceWorker' in navigator) {
