@@ -1294,4 +1294,3 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
