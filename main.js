@@ -73,7 +73,9 @@ const translations = {
     confirmCloseWeek:        "¿Cerrar semana y guardar historial?",
     weekClosedMsg:           "✅ Semana cerrada y guardada",
     confirmResetApp:        "⚠️ Esto borrará TODOS los datos y recargará la app. ¿Continuar?",
-    resetSuccessMsg:        "✅ Aplicación reiniciada. Comenzando de cero…"
+    resetSuccessMsg:        "✅ Aplicación reiniciada. Comenzando de cero…",
+    swNotRegistered:        "No hay SW registrado.",
+    searchingUpdates:       "Buscando actualizaciones…"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -145,7 +147,9 @@ const translations = {
     confirmCloseWeek:        "Close week and save history?",
     weekClosedMsg:           "✅ Week closed and saved",
     confirmResetApp:        "⚠️ This will erase ALL data and reload the app. Continue?",
-    resetSuccessMsg:        "✅ App reset. Starting from scratch…"
+    resetSuccessMsg:        "✅ App reset. Starting from scratch…",
+    swNotRegistered:        "No SW registered.",
+    searchingUpdates:       "Searching for updates…",
   }
 };
 
@@ -1319,23 +1323,33 @@ document.getElementById('save-pin')?.addEventListener('click', () => {
     });
   }
 
-  // ➕ Evento para tu botón “Instalar actualizaciones”
-  document
-    .getElementById('install-updates')
-    ?.addEventListener('click', async () => {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) return console.warn('No hay SW registrado.');
-      // Si ya hubo un SW precargado y waiting → skip
-      if (registration.waiting) {
-        sendSkipWaiting(registration.waiting);
-      } else {
-        // Sino, fuerza la búsqueda de una nueva versión
-        registration.update();
-      }
-      flashMessage('Buscando actualizaciones…');
-    });
+// ➕ Evento para tu botón “Instalar actualizaciones”
+document.getElementById('install-updates')
+  ?.addEventListener('click', async () => {
+    const lang = localStorage.getItem('lang') || 'es';
+    const t    = translations[lang];
 
-}); // fin DOMContentLoaded
+    // 1) Obtiene la instancia del Service Worker
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      // Muestra aviso traducido en consola
+      return console.warn(t.swNotRegistered);
+    }
+
+    // 2) Si ya había SW esperando, forzamos skipWaiting
+    if (registration.waiting) {
+      sendSkipWaiting(registration.waiting);
+    } else {
+      // Sino, lanza búsqueda de nueva versión
+      registration.update();
+    }
+
+    // 3) Feedback al usuario mediante flashMessage traducido
+    flashMessage(t.searchingUpdates);
+  });
+
+
+});
 
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
