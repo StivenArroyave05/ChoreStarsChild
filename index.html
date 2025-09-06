@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chore Stars Child</title>
+  <title data-i18n="appTitle">Chore Stars Child</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link rel="icon" href="/favicon.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,327 +14,211 @@
 <body class="bg-blue-50 min-h-screen flex flex-col font-sans">
 
   <!-- Header -->
-<header class="app-header">
-  <!-- 1) Container de info con logo + texto -->
-  <div class="header-info flex items-center">
-    <!-- Logo: ajusta src a la ruta real de tu imagen -->
-    <img
-      id="app-logo"
-      src="assets/logo.png"
-      alt="Chore Stars Child Logo"
-      class="h-12 w-auto mr-3"
-    />
-    <div>
-      <h1 class="text-2xl font-extrabold">Chore Stars Child</h1>
-      <label class="text-sm opacity-80">
-        Panel de tareas, deberes y recompensas para
-        <span id="child-name-label" class="font-extrabold">[Nombre]</span>
-      </label>
+  <header class="app-header">
+    <div class="header-info flex items-center">
+      <img
+        id="app-logo"
+        src="assets/logo.png"
+        alt="Chore Stars Child Logo"
+        class="h-12 w-auto mr-3"
+      />
+      <div>
+        <h1 class="text-2xl font-extrabold" data-i18n="appTitle">Chore Stars Child</h1>
+        <label class="text-sm opacity-80" data-i18n="panelSubtitle">
+          Panel de tareas, deberes y recompensas para
+          <span id="child-name-label" class="font-extrabold">[Nombre]</span>
+        </label>
+      </div>
     </div>
-  </div>
-
-    <!-- Agregamos .header-stats -->
     <div class="header-stats text-sm">
-      <p>⭐ Ganadas: <span id="points-earned">0</span></p>
-      <p>⭐❌ Perdidas: <span id="points-lost">0</span></p>
-      <p>⭐🎁 Canjeadas: <span id="points-redeemed">0</span></p>
-      <p class="total">⭐ Totales: <span id="points-total">0</span></p>
+      <p>⭐ <span data-i18n="earnedLabel">Ganadas</span>: <span id="points-earned">0</span></p>
+      <p>⭐❌ <span data-i18n="lostLabel">Perdidas</span>: <span id="points-lost">0</span></p>
+      <p>⭐🎁 <span data-i18n="redeemedLabel">Canjeadas</span>: <span id="points-redeemed">0</span></p>
+      <p class="total">⭐ <span data-i18n="totalLabel">Totales</span>: <span id="points-total">0</span></p>
     </div>
   </header>
 
+  <!-- Language selector -->
+  <div id="language-selector" class="text-center mt-4">
+    <label for="language-select" data-i18n="languageLabel">Idioma:</label>
+    <select id="language-select" class="ml-2 border rounded px-2 py-1">
+      <option value="es">Español</option>
+      <option value="en">English</option>
+    </select>
+  </div>
 
   <!-- Tabs -->
   <nav class="app-nav">
-    <button class="tab-btn tab-active" data-tab="tasks">Tareas</button>
-    <button class="tab-btn"        data-tab="rewards">Recompensas</button>
-    <button class="tab-btn"        data-tab="settings">Configuración</button>
+    <button class="tab-btn tab-active" data-tab="tasks" data-i18n="tabTasks">Tareas</button>
+    <button class="tab-btn" data-tab="rewards" data-i18n="tabRewards">Recompensas</button>
+    <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">Configuración</button>
   </nav>
 
-  <!-- Main -->
-  <section id="tasks" class="tab-content visible space-y-6 padding:1">
-  <div id="today-header" class="text-sm text-gray-600 mb-2 text-center"></div>
+  <!-- Main content -->
+  <main class="flex-1 overflow-auto">
 
+    <!-- Tasks tab -->
+    <section id="tasks" class="tab-content visible space-y-6">
+      <div id="today-header" class="text-sm text-gray-600 mb-2 text-center"></div>
 
-<!-- 📋 Tareas Asignadas (HTML mejorado) -->
-<section class="tasks-section text-center">
-  <label class="tasks-title">📝 Tareas asignadas</label>
-  <div id="tasks-list" class="tasks-grid">
-    <!-- Ejemplo de tarea -->
-    <div class="task-card">
-      <div class="task-info">
-        <input type="checkbox" id="task-1" />
-        <label for="task-1" class="task-title">Ir al supermercado con mamá</label>
+      <section class="tasks-section text-center">
+        <label class="tasks-title" data-i18n="assignedTasks">📝 Tareas asignadas</label>
+        <div id="tasks-list" class="tasks-grid"></div>
+      </section>
+
+      <div class="bg-gray-200 rounded-full h-4 w-full">
+        <div id="progress-bar" class="bg-starGreen h-4 rounded-full transition-all duration-300" style="width: 0%;"></div>
       </div>
-      <div class="task-actions">
-        <button class="btn btn-complete">Hecho</button>
+
+      <div class="bg-yellow-100 p-4 rounded-xl shadow-md text-center">
+        <label for="cutoff-time" class="text-lg font-semibold text-yellow-800" data-i18n="dailyCutoffLabel">
+          ⏰ Hora límite diaria
+        </label>
+        <p id="cutoff-display" class="text-sm text-yellow-700"></p>
       </div>
-    </div>
-    <!-- ...más .task-card generadas dinámicamente -->
-  </div>
-</section>
 
-  <!-- ⭐ Barra de progreso -->
-  <div class="bg-gray-200 rounded-full h-4 w-full">
-    <div id="progress-bar" class="bg-starGreen h-4 rounded-full transition-all duration-300" style="width: 0%;"></div>
-  </div>
+      <div class="bg-green-100 p-4 rounded-xl shadow-md text-center">
+        <label class="text-lg font-semibold text-green-800" data-i18n="currentWeekLabel">
+          📅 Semana en curso
+        </label>
+        <p class="text-sm text-green-700"><span id="week-start">--</span></p>
+      </div>
 
-  <!-- ⏰ Hora límite -->
-  <div class="bg-yellow-100 p-4 rounded-xl shadow-md">
-    <label for="cutoff-time" class="text-lg font-semibold text-yellow-800">
-      ⏰ Hora límite diaria
-    <p id="cutoff-display" class="text-sm text-yellow-700"></p>
-  </div>
+      <div class="bg-purple-100 p-4 rounded-xl shadow-md text-center">
+        <label class="text-lg font-semibold text-purple-800" data-i18n="weeklyHistoryLabel">
+          📜 Historial de semanas anteriores
+        </label>
+        <div id="weekly-history-list" class="space-y-2 text-sm text-purple-700"></div>
+      </div>
 
+      <div class="bg-white p-4 rounded-xl shadow-md text-center">
+        <label class="text-lg font-bold text-starPurple" data-i18n="badgesLabel">
+          🏅 Insignias desbloqueadas esta semana
+        </label>
+        <div id="badge-list" class="flex gap-4 mt-2 text-2xl"></div>
+      </div>
+    </section>
 
-  <!-- 📅 Semana en curso -->
-  <div class="bg-green-100 p-4 rounded-xl shadow-md">
-    <label class="text-lg font-semibold text-green-800">
-      📅 Semana en curso
-    <p class="text-sm text-green-700"><span id="week-start">--</span></p>
-  </div>
-
-
-  <!-- 📜 Historial semanal -->
-  <div class="bg-purple-100 p-4 rounded-xl shadow-md">
-    <label class="text-lg font-semibold text-purple-800">📜 Historial de semanas anteriores</h3>
-    <div id="weekly-history-list" class="space-y-2 text-sm text-purple-700">
-    </div>
-  </div>
-
-<!-- 🏅 Insignias -->
-<div class="bg-white p-4 rounded-xl shadow-md text-center">
-  <label class="text-lg font-bold text-starPurple">🏅 Insignias desbloqueadas esta semana
-  <div id="badge-list" class="flex gap-4 mt-2 text-2xl">
-    <!-- Se llenará dinámicamente -->
-  </div>
-</div>
-
-</section>
-
-    <!-- Recompensas -->
+    <!-- Rewards tab -->
     <section id="rewards" class="tab-content hidden space-y-4">
       <div id="rewards-list" class="space-y-2"></div>
     </section>
 
-<!-- Configuración -->
-<section
-  id="settings"
-  class="text-center tab-content hidden space-y-8"
->
-  <!-- Intro padres -->
-  <p class="font-semibold text-lg mt-4">
-    Espacio para uso exclusivo de los padres
-  </p>
+    <!-- Settings tab -->
+    <section id="settings" class="tab-content hidden space-y-8 text-center">
 
-  <!-- 🌟 Gestión de niños -->
-  <div class="settings-section">
-    <label class="font-semibold text-lg block mb-2">
-      👨‍👩‍👧‍👦‍👧‍👦 Gestión de niños
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="new-child-name"
-        type="text"
-        class="input flex-1"
-        placeholder="Nombre del niño"
-      />
-      <button
-        id="add-child"
-        class="btn btn-primary"
-      >
-        Añadir niño
-      </button>
-    </div>
-    <ul id="children-list" class="space-y-2 mt-4"></ul>
-  </div>
-
-  <!-- 🌟 Hora límite diaria -->
-  <div class="settings-section">
-    <label
-      for="cutoff-time"
-      class="font-semibold text-lg block mb-2"
-    >
-      ⏰ Hora límite diaria para completar las tareas
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="cutoff-time"
-        type="time"
-        class="input flex-1"
-        value="21:00"
-      />
-      <button
-        id="save-cutoff"
-        class="btn btn-primary"
-      >
-        Guardar hora
-      </button>
-    </div>
-  </div>
-
-  <!-- 🌟 PIN de acceso -->
-  <div class="settings-section">
-    <label
-      for="pin-input"
-      class="font-semibold text-lg block mb-2"
-    >
-      🔐 PIN de acceso al panel de configuración
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="pin-input"
-        type="password"
-        class="input flex-1"
-        placeholder="Ej: 1234"
-      />
-      <button
-        id="save-pin"
-        class="btn btn-primary"
-      >
-        Guardar PIN
-      </button>
-      <p
-        id="pin-status"
-        class="text-sm text-green-600 hidden ml-2"
-      >
-        PIN guardado correctamente.
+      <p class="font-semibold text-lg mt-4" data-i18n="parentsIntro">
+        Espacio para uso exclusivo de los padres
       </p>
-    </div>
-  </div>
 
-  <!-- 📝 Gestión de tareas -->
-  <div class="settings-section">
-    <label
-      for="new-task-name"
-      class="font-semibold text-lg block mb-2"
-    >
-      📝 Gestión de tareas
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="new-task-name"
-        type="text"
-        class="input flex-1"
-        placeholder="Nombre de la tarea"
-      />
-      <input
-        id="new-task-points"
-        type="number"
-        class="input w-24"
-        placeholder="Puntos"
-      />
-      <button
-        id="add-task"
-        class="btn btn-success"
-      >
-        Añadir tarea
-      </button>
-    </div>
-    <div
-      id="tasks-manage"
-      class="flex flex-col gap-2 mt-4"
-    ></div>
-  </div>
+      <!-- Children management -->
+      <div class="settings-section">
+        <label class="font-semibold text-lg block mb-2" data-i18n="childManagementLabel">
+          👨‍👩‍👧‍👦 Gestión de niños
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="new-child-name" type="text" class="input flex-1" placeholder="Nombre del niño" />
+          <button id="add-child" class="btn btn-primary" data-i18n="addChildBtn">Añadir niño</button>
+        </div>
+        <ul id="children-list" class="space-y-2 mt-4"></ul>
+      </div>
 
-  <!-- 🎁 Gestión de recompensas -->
-  <div class="settings-section">
-    <label
-      for="new-reward-name"
-      class="font-semibold text-lg block mb-2"
-    >
-      🎁 Gestión de recompensas
-    </label>
-    <div class="flex gap-2 items-center">
-      <input
-        id="new-reward-name"
-        type="text"
-        class="input flex-1"
-        placeholder="Nombre de la recompensa"
-      />
-      <input
-        id="new-reward-cost"
-        type="number"
-        class="input w-24"
-        placeholder="Costo"
-      />
-      <button
-        id="add-reward"
-        class="btn btn-warning"
-      >
-        Añadir recompensa
-      </button>
-    </div>
-    <div
-      id="rewards-manage"
-      class="flex flex-col gap-2 mt-4"
-    ></div>
-  </div>
+      <!-- Cutoff time -->
+      <div class="settings-section">
+        <label for="cutoff-time" class="font-semibold text-lg block mb-2" data-i18n="cutoffTimeLabel">
+          ⏰ Hora límite diaria para completar las tareas
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="cutoff-time" type="time" class="input flex-1" value="21:00" />
+          <button id="save-cutoff" class="btn btn-primary" data-i18n="saveCutoffBtn">Guardar hora</button>
+        </div>
+      </div>
 
-  <!-- 🌟 Cerrar semana -->
-  <div class="settings-section">
-    <label class="font-semibold text-lg block mb-2">
-      📅 Cerrar semana y guardar historial
-    </label>
-    <div class="flex justify-start gap-2">
-      <button
-        id="reset-week"
-        class="btn btn-primary"
-      >
-        Cerrar semana
-      </button>
-    </div>
-    <div
-      id="weekly-summary-box"
-      class="mt-4 text-sm text-left space-y-2"
-    ></div>
-  </div>
+      <!-- PIN -->
+      <div class="settings-section">
+        <label for="pin-input" class="font-semibold text-lg block mb-2" data-i18n="pinLabel">
+          🔐 PIN de acceso al panel de configuración
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="pin-input" type="password" class="input flex-1" placeholder="Ej: 1234" />
+          <button id="save-pin" class="btn btn-primary" data-i18n="savePinBtn">Guardar PIN</button>
+          <p id="pin-status" class="text-sm text-green-600 hidden ml-2" data-i18n="pinSavedMsg">
+            PIN guardado correctamente.
+          </p>
+        </div>
+      </div>
 
-  <!-- ✅ Historial de semanas cerradas -->
-  <div class="settings-section">
-    <label class="font-bold text-lg block mb-2">
-      📜 Historial de semanas cerradas
-    </label>
-    <div id="closed-weeks-history"></div>
-  </div>
+      <!-- Task management -->
+      <div class="settings-section">
+        <label for="new-task-name" class="font-semibold text-lg block mb-2" data-i18n="taskManagementLabel">
+          📝 Gestión de tareas
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="new-task-name" type="text" class="input flex-1" placeholder="Nombre de la tarea" />
+          <input id="new-task-points" type="number" class="input w-24" placeholder="Puntos" />
+          <button id="add-task" class="btn btn-success" data-i18n="addTaskBtn">Añadir tarea</button>
+        </div>
+        <div id="tasks-manage" class="cards-grid mt-4"></div>
+      </div>
 
-  <!-- 🔄 Instalar actualizaciones (recarga manual del SW) -->
-  <div class="settings-section">
-    <label
-      for="install-updates"
-      class="font-semibold text-lg block mb-2"
-      data-i18n="installUpdatesLabel"
-    >
-      Recarga la versión más reciente de la app
-    </label>
-    <div class="flex justify-start gap-2">
-      <button
-        id="install-updates"
-        class="btn btn-success"
-        data-i18n="installUpdatesBtn"
-      >
-        Instalar actualizaciones
-      </button>
-    </div>
-  </div>
+      <!-- Reward management -->
+      <div class="settings-section">
+        <label for="new-reward-name" class="font-semibold text-lg block mb-2" data-i18n="rewardManagementLabel">
+          🎁 Gestión de recompensas
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="new-reward-name" type="text" class="input flex-1" placeholder="Nombre de la recompensa" />
+          <input id="new-reward-cost" type="number" class="input w-24" placeholder="Costo" />
+          <button id="add-reward" class="btn btn-warning" data-i18n="addRewardBtn">Añadir recompensa</button>
+        </div>
+        <div id="rewards-manage" class="cards-grid mt-4"></div>
+      </div>
 
-  <!-- ⚠️ Reiniciar aplicación -->
-  <div class="settings-section">
-    <label class="font-semibold text-lg block mb-2">
-      ⚠️ Reiniciar la app al estado inicial
-    </label>
-    <div class="flex justify-start gap-2">
-      <button
-        id="reset-app"
-        class="btn btn-danger"
-      >
-        Reiniciar aplicación
-      </button>
-    </div>
-  </div>
-</section>
+      <!-- Close week -->
+      <div class="settings-section">
+        <label class="font-semibold text-lg block mb-2" data-i18n="closeWeekLabel">
+          📅 Cerrar semana y guardar historial
+        </label>
+        <div class="flex justify-start gap-2">
+          <button id="reset-week" class="btn btn-primary" data-i18n="closeWeekBtn">Cerrar semana</button>
+        </div>
+        <div id="weekly-summary-box" class="mt-4 text-sm text-left space-y-2"></div>
+      </div>
 
+      <!-- Closed weeks history -->
+      <div class="settings-section">
+        <label class="font-bold text-lg block mb-2" data-i18n="closedWeeksLabel">
+          📜 Historial de semanas cerradas
+        </label>
+        <div id="closed-weeks-history"></div>
+      </div>
 
-      </main>
+      <!-- Install updates -->
+      <div class="settings-section">
+        <label for="install-updates" class="font-semibold text-lg block mb-2" data-i18n="installUpdatesLabel">
+          Recarga la versión más reciente de la app
+        </label>
+        <div class="flex justify-start gap-2">
+          <button id="install-updates" class="btn btn-success" data-i18n="installUpdatesBtn">
+            Instalar actualizaciones
+          </button>
+        </div>
+      </div>
+
+      <!-- Reset app -->
+      <div class="settings-section">
+        <label class="font-semibold text-lg block mb-2" data-i18n="resetAppLabel">
+          ⚠️ Reiniciar la app al estado inicial
+        </label>
+        <div class="flex justify-start gap-2">
+          <button id="reset-app" class="btn btn-danger" data-i18n="resetAppBtn">
+            Reiniciar aplicación
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
 
 <!-- Modal resumen semanal funcional -->
 <div id="weekly-summary-overlay" style="

@@ -1053,3 +1053,104 @@ function sendSkipWaiting(worker) {
     }
   });
 }
+
+
+// 1) Traducciones
+const translations = {
+  es: {
+    languageLabel:    "Idioma:",
+    appTitle:         "Chore Stars Child",
+    panelSubtitle:    "Panel de tareas, deberes y recompensas para",
+    earnedLabel:      "Ganadas",
+    lostLabel:        "Perdidas",
+    redeemedLabel:    "Canjeadas",
+    totalLabel:       "Totales",
+    tabTasks:         "Tareas",
+    tabRewards:       "Recompensas",
+    tabSettings:      "Configuración",
+    assignedTasks:    "📝 Tareas asignadas",
+    dailyCutoffLabel: "⏰ Hora límite diaria",
+    currentWeekLabel: "📅 Semana en curso",
+    weeklyHistoryLabel:"📜 Historial de semanas anteriores",
+    badgesLabel:      "🏅 Insignias desbloqueadas esta semana",
+    parentsIntro:     "Espacio para uso exclusivo de los padres",
+    childManagementLabel:"👨‍👩‍👧‍👦 Gestión de niños",
+    addChildBtn:      "Añadir niño",
+    cutoffTimeLabel:  "⏰ Hora límite diaria para completar las tareas",
+    saveCutoffBtn:    "Guardar hora",
+    pinLabel:         "🔐 PIN de acceso al panel de configuración",
+    savePinBtn:       "Guardar PIN",
+    pinSavedMsg:      "PIN guardado correctamente.",
+    taskManagementLabel:"📝 Gestión de tareas",
+    addTaskBtn:       "Añadir tarea",
+    rewardManagementLabel:"🎁 Gestión de recompensas",
+    addRewardBtn:     "Añadir recompensa",
+    closeWeekLabel:   "📅 Cerrar semana y guardar historial",
+    closeWeekBtn:     "Cerrar semana",
+    closedWeeksLabel: "📜 Historial de semanas cerradas",
+    installUpdatesLabel: "Recarga la versión más reciente de la app",
+    installUpdatesBtn:  "Instalar actualizaciones",
+    resetAppLabel:      "⚠️ Reiniciar la app al estado inicial",
+    resetAppBtn:        "Reiniciar aplicación"
+  },
+  en: {
+    languageLabel:    "Language:",
+    appTitle:         "Chore Stars Child",
+    panelSubtitle:    "Task, duty and reward panel for",
+    earnedLabel:      "Earned",
+    lostLabel:        "Lost",
+    redeemedLabel:    "Redeemed",
+    totalLabel:       "Total",
+    tabTasks:         "Tasks",
+    tabRewards:       "Rewards",
+    tabSettings:      "Settings",
+    assignedTasks:    "📝 Assigned Tasks",
+    dailyCutoffLabel: "⏰ Daily cutoff time",
+    currentWeekLabel: "📅 Current week",
+    weeklyHistoryLabel:"📜 Previous weeks history",
+    badgesLabel:      "🏅 Badges unlocked this week",
+    parentsIntro:     "Parents only area",
+    childManagementLabel:"👨‍👩‍👧‍👦 Child management",
+    addChildBtn:      "Add child",
+    cutoffTimeLabel:  "⏰ Daily cutoff to complete tasks",
+    saveCutoffBtn:    "Save time",
+    pinLabel:         "🔐 Access PIN for settings",
+    savePinBtn:       "Save PIN",
+    pinSavedMsg:      "PIN saved successfully.",
+    taskManagementLabel:"📝 Task management",
+    addTaskBtn:       "Add task",
+    rewardManagementLabel:"🎁 Reward management",
+    addRewardBtn:     "Add reward",
+    closeWeekLabel:   "📅 Close week and save history",
+    closeWeekBtn:     "Close week",
+    closedWeeksLabel: "📜 Closed weeks history",
+    installUpdatesLabel: "Reload latest version of the app",
+    installUpdatesBtn:  "Install updates",
+    resetAppLabel:      "⚠️ Reset app to initial state",
+    resetAppBtn:        "Reset app"
+  }
+};
+
+// 2) Función que recorre [data-i18n] y aplica la traducción
+function applyTranslations(lang) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const txt = translations[lang]?.[key];
+    if (txt) el.textContent = txt;
+  });
+}
+
+// 3) Al cargar, aplicamos y guardamos la selección
+document.addEventListener('DOMContentLoaded', () => {
+  const select = document.getElementById('language-select');
+  const saved  = localStorage.getItem('lang') || 'es';
+  applyTranslations(saved);
+  if (select) {
+    select.value = saved;
+    select.addEventListener('change', e => {
+      const lang = e.target.value;
+      localStorage.setItem('lang', lang);
+      applyTranslations(lang);
+    });
+  }
+});
