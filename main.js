@@ -32,16 +32,33 @@ function updateHeaderName() {
 }
 
 /**
- * Actualiza la fecha “Hoy es:” en el header de tareas
+ * Actualiza la fecha “Hoy es:” (o “Today is:”) en el header de tareas,
+ * tirando de tu objeto translations según el lang guardado en localStorage.
  */
 function updateTodayHeader() {
   const el = document.getElementById('today-header');
   if (!el) return;
-  const now   = new Date();
-  const date  = now.toLocaleDateString('es-CO', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+
+  // 1) Determina el locale para formatear la fecha
+  const savedLang = localStorage.getItem('lang') || 'es';
+  const locale    = savedLang === 'en' ? 'en-US' : 'es-CO';
+
+  // 2) Genera la fecha traducida/región-correcta
+  const now = new Date();
+  const formattedDate = now.toLocaleDateString(locale, {
+    weekday: 'long',
+    year:    'numeric',
+    month:   'long',
+    day:     'numeric'
   });
-  el.textContent = `Hoy es: ${date}`;
+
+  // 3) Toma la etiqueta traducible de tu objeto translations
+  //    Asegúrate que en translations tienes:
+  //    { es: { todayLabel: "Hoy es:" … }, en: { todayLabel: "Today is:" … } }
+  const label = translations[savedLang]?.todayLabel || translations.es.todayLabel;
+
+  // 4) Finalmente inyecta texto completo
+  el.textContent = `${label} ${formattedDate}`;
 }
 
 
