@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.01";  // Actualízalo en cada release
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -90,6 +90,7 @@ const translations = {
     shareBtnLabel:          "Compartir",
     redeemBtnLabel:         "Canjear",
     unknownChild:           "alguien",
+    notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"'
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -177,7 +178,8 @@ const translations = {
     redeemedByLabel:        "Redeemed by {name}",
     shareBtnLabel:          "Share",
     redeemBtnLabel:         "Redeem",
-    unknownChild:           "someone"
+    unknownChild:           "someone",
+    notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"'
   }
 };
 
@@ -858,23 +860,28 @@ function renderChildRewards() {
 // 9. Canje de recompensas
 ////////////////////////////////////////////////////////////////////////////////
 function handleRewardRedemption(index) {
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
   const r = rewards[index];
-  if (!r || r.redeemed) return;              // si ya fue canjeada, no seguimos
+  if (!r || r.redeemed) return;
 
   // 1) Verificar puntos disponibles
   const stats   = getStatsFor(activeChildId);
   const bonus   = badges.reduce((sum, b) => sum + b.bonus, 0);
   const available = stats.earned + bonus - stats.lost - stats.redeemed;
+
   if (available < r.cost) {
-    return alert(`⚠️ No tienes suficientes puntos para "${r.name}"`);
+    const msg = t.notEnoughPoints.replace('{reward}', r.name);
+    return alert(msg);
   }
 
   // 2) Aplicar canje
   stats.redeemed += r.cost;
-  r.redeemed      = true;                     // nueva propiedad
-  r.redeemedBy    = activeChildId;            // guardo quién lo canjeó
+  r.redeemed      = true;
+  r.redeemedBy    = activeChildId;
 
-  saveStatsMap();                             // o saveStats si usas single-stats
+  saveStatsMap();
   saveRewards();
 
   // 3) Refrescar UI
@@ -888,7 +895,7 @@ function handleRewardRedemption(index) {
   document.body.appendChild(sparkle);
   setTimeout(() => sparkle.remove(), 800);
 
-  // 5) Invocar compartir
+  // 5) Compartir
   shareReward(r.name);
 }
 
@@ -1448,5 +1455,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
