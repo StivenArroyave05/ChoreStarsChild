@@ -91,7 +91,12 @@ const translations = {
     redeemBtnLabel:         "Canjear",
     unknownChild:           "alguien",
     notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"',
-    deleteTaskBtn:          "Eliminar"
+    deleteTaskBtn:          "Eliminar",
+    frequencyLabel:         "Frecuencia:",
+    frequencyDaily:         "Diaria",
+    frequencyWeekly:        "Semanal",
+    penDailyMsg:            "⚠️ Penalización diaria aplicada",
+    penWeeklyMsg:           "⚠️ Penalización semanal aplicada",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -181,7 +186,12 @@ const translations = {
     redeemBtnLabel:         "Redeem",
     unknownChild:           "someone",
     notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"',
-    deleteTaskBtn:          "Delete"
+    deleteTaskBtn:          "Delete",
+    frequencyLabel:         "Frequency:",
+    frequencyDaily:         "Daily",
+    frequencyWeekly:        "Weekly",
+    penDailyMsg:            "⚠️ Daily penalty applied",
+    penWeeklyMsg:           "⚠️ Weekly penalty applied",
   }
 };
 
@@ -207,6 +217,105 @@ function updateFooterVersion() {
   document.getElementById("app-footer").textContent = text;
 }
 
+// ──────────────
+// Helpers para cálculos de clave de día/semana
+// ──────────────
+// Devuelve "YYYY-MM-DD" de hoy
+function getTodayKey() {
+  return new Date().toISOString().split('T')[0];
+}
+
+// Devuelve "YYYY-MM-DD" del lunes de la semana en curso
+function getCurrentWeekStartKey() {
+  const monday = getWeekStart(new Date()); // ya tienes getWeekStart()
+  return monday.toISOString().split('T')[0];
+}
+
+// ──────────────
+// 1) Penalizaciones diarias “pendientes”
+// ──────────────
+function applyPendingDailyPenalties() {
+  const lang     = localStorage.getItem('lang') || 'es';
+  const t        = translations[lang];
+  const todayKey = getTodayKey();
+  const lastKey  = localStorage.getItem('lastDailyPenalty') || '';
+
+  // Fecha límite de hoy (p.ej. "21:00")
+  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m]   = cutoff.split(':').map(Number);
+  const cutoffDt = new Date();
+  cutoffDt.setHours(h, m, 0, 0);
+
+  // Si ya pasó el cutoff y aún no penalizamos hoy, aplicamos
+  if (new Date() > cutoffDt && todayKey !== lastKey) {
+    let anyChange = false;
+
+    tasks.forEach(task => {
+      if (task.frequency === 'daily' && !task.done && !task.penalized) {
+        const stats = getStatsFor(task.childId);
+        stats.lost     += task.points * 2;  // ×2
+        task.penalized  = true;
+        anyChange       = true;
+      }
+    });
+
+    if (anyChange) {
+      saveStatsMap();
+      saveTasks();
+      updatePointDisplay();
+      flashMessage(t.penDailyMsg);
+    }
+
+    // Marcamos que ya penalizamos hoy
+    localStorage.setItem('lastDailyPenalty', todayKey);
+  }
+}
+
+// ──────────────
+// 2) Penalizaciones semanales “pendientes”
+// ──────────────
+function applyPendingWeeklyPenalties() {
+  const lang        = localStorage.getItem('lang') || 'es';
+  const t           = translations[lang];
+  const weekKey     = getCurrentWeekStartKey();
+  const lastWeekKey = localStorage.getItem('lastWeeklyPenalty') || '';
+
+  // Calcula el domingo de esta semana + hora cutoff
+  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m]   = cutoff.split(':').map(Number);
+  const sunday   = new Date(getWeekStart(new Date()));
+  sunday.setDate(sunday.getDate() + 6);
+  sunday.setHours(h, m, 0, 0);
+
+  // Si ya pasó domingo+corte y aún no penalizamos esta semana
+  if (new Date() > sunday && weekKey !== lastWeekKey) {
+    let anyChange = false;
+
+    tasks.forEach(task => {
+      if (
+        task.frequency === 'weekly' &&
+        !task.done &&
+        !task.penalized
+      ) {
+        const stats = getStatsFor(task.childId);
+        stats.lost     += task.points * 3;  // ×3
+        task.penalized  = true;
+        anyChange       = true;
+      }
+    });
+
+    if (anyChange) {
+      saveStatsMap();
+      saveTasks();
+      updatePointDisplay();
+      flashMessage(t.penWeeklyMsg);
+    }
+
+    // Marcamos que ya penalizamos esta semana
+    localStorage.setItem('lastWeeklyPenalty', weekKey);
+  }
+}
+
 // 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
   // — 3.1) Idioma guardado o por defecto
@@ -222,6 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderBadges();
   updatePointDisplay();
   updateFooterVersion();
+  applyPendingDailyPenalties();
+  applyPendingWeeklyPenalties();
 
   // — 3.3) Bienvenida: ajustar select y ocultarla si ya hay idioma
   const welcomeSelect = document.getElementById('welcome-lang-select');
@@ -1294,22 +1405,19 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   // B) Regla de cierre (ya maneja sus propios alerts)
   if (!canCloseWeek()) return;
 
-  // C) Penalización de tareas “weekly” no realizadas (×3)
+  // ** Penalizar tareas semanales no hechas **
   tasks.forEach(task => {
-    if (
-      task.childId === activeChildId &&
-      task.frequency === 'weekly' &&
-      !task.done &&
-      !task.penalized
-    ) {
-      const stats = getStatsFor(task.childId);
-      stats.lost     += task.points * 3;  // ×3
+    if (task.childId === activeChildId
+        && task.frequency === 'weekly'
+        && !task.done
+        && !task.penalized) {
+      stats.lost += task.points * 3; // ×3
       task.penalized = true;
     }
   });
-  saveStatsMap();
-  saveTasks();
-  flashMessage(t.penWeeklyMsg);
+
+  // C) Confirmación
+  if (!confirm(t.confirmCloseWeek)) return;
 
 // D) Genera la entrada con childId y sus stats
 const range = getCurrentWeekRange();
