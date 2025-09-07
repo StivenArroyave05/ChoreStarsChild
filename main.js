@@ -1425,12 +1425,14 @@ document.getElementById('rewards-manage')?.addEventListener('click', e => {
 });
 
 
+// ➡️ Cerrar semana y guardar historial
 document.getElementById('reset-week')?.addEventListener('click', () => {
+  // 0) Traducción
   const lang  = localStorage.getItem('lang') || 'es';
   const t     = translations[lang];
-  const stats = getStatsFor(activeChildId);
 
   // A) Verifica actividad
+  const stats = getStatsFor(activeChildId);
   if (stats.earned === 0 && stats.lost === 0 && stats.redeemed === 0) {
     return alert(t.noActivityMsg);
   }
@@ -1446,8 +1448,8 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
       !task.done &&
       !task.penalized
     ) {
-      stats.lost       += task.points * 3;
-      task.penalized    = true;
+      stats.lost      += task.points * 3;
+      task.penalized   = true;
     }
   });
   saveStatsMap();
@@ -1457,7 +1459,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   // D) Confirmación de cierre
   if (!confirm(t.confirmCloseWeek)) return;
 
-  // E) Genera la entrada con childId y sus stats
+  // E) Genera la entrada en history
   const range = getCurrentWeekRange();
   weeklyHistory.push({
     childId:   activeChildId,
@@ -1470,11 +1472,8 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
     timestamp: new Date().toISOString()
   });
   saveHistory();
-});
 
-
-
-  // E) Reinicia SOLO los stats de ese niño y las tareas/recompensas
+  // F) Reinicia stats y filtra tareas/recompensas
   weeklyStatsMap[activeChildId] = getDefaultStats();
   saveStatsMap();
   tasks   = tasks.filter(t => t.childId !== activeChildId);
@@ -1482,7 +1481,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   saveTasks();
   saveRewards();
 
-  // F) Refresca UI
+  // G) Refresca UI
   renderTasks();
   renderChildTasks();
   renderRewardsManage();
@@ -1491,9 +1490,10 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   renderWeeklyHistory();
   showTab('tasks');
 
-  // G) Notificación final traducida
+  // H) Notificación final
   alert(t.weekClosedMsg);
 });
+
 
 
   // 🔄 Reset completo de la app (traducción total)
