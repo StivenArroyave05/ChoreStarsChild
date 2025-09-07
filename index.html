@@ -213,30 +213,58 @@
 
       <!-- Task management -->
       <div class="settings-section">
-        <label for="new-task-name"
-               class="font-semibold text-lg block mb-2"
-               data-i18n="taskManagementLabel">
+        <label 
+          for="new-task-name"
+          class="font-semibold text-lg block mb-2"
+          data-i18n="taskManagementLabel"
+        >
           📝 Gestión de tareas
         </label>
+
         <div class="flex gap-2 items-center">
-          <input id="new-task-name"
-                 type="text"
-                 class="input flex-1"
-                 placeholder=""
-                 data-i18n-placeholder="taskNamePlaceholder" />
-          <input id="new-task-points"
-                 type="number"
-                 class="input w-24"
-                 placeholder=""
-                 data-i18n-placeholder="taskPointsPlaceholder" />
-          <button id="add-task"
-                  class="btn btn-success"
-                  data-i18n="addTaskBtn">
+          <input
+            id="new-task-name"
+            type="text"
+            class="input flex-1"
+            placeholder=""
+            data-i18n-placeholder="taskNamePlaceholder"
+          />
+
+          <input
+            id="new-task-points"
+            type="number"
+            class="input w-24"
+            placeholder=""
+            data-i18n-placeholder="taskPointsPlaceholder"
+          />
+
+          <div class="flex items-center gap-1">
+            <span 
+              class="font-medium"
+              data-i18n="frequencyLabel"
+            ></span>
+            <select
+              id="new-task-frequency"
+              class="input border rounded p-1"
+              aria-label="Frequency selector"
+            >
+              <option value="daily"   data-i18n="frequencyDaily">Diaria</option>
+              <option value="weekly"  data-i18n="frequencyWeekly">Semanal</option>
+            </select>
+         </div>
+
+          <button
+            id="add-task"
+            class="btn btn-success"
+            data-i18n="addTaskBtn"
+          >
             Añadir tarea
           </button>
         </div>
+
         <div id="tasks-manage" class="cards-grid mt-4"></div>
       </div>
+
 
       <!-- Reward management -->
       <div class="settings-section">
@@ -317,8 +345,17 @@
           </button>
         </div>
       </div>
+
+  <!-- Language selector -->
+  <div id="language-selector" class="text-center mt-4">
+    <label for="language-select" data-i18n="languageLabel">Idioma:</label>
+    <select id="language-select" class="ml-2 border rounded px-2 py-1">
+      <option value="es">Español</option>
+      <option value="en">English</option>
+    </select>
+  </div>
+
     </section>
-    
   </main>
 
 <!-- Modal resumen semanal funcional -->

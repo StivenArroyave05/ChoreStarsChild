@@ -92,6 +92,11 @@ const translations = {
     unknownChild:           "alguien",
     notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"',
     deleteTaskBtn:          "Eliminar"
+    frequencyLabel:         "Frecuencia:",
+    frequencyDaily:         "Diaria",
+    frequencyWeekly:        "Semanal",
+    penDailyMsg:            "⚠️ Penalización diaria aplicada",
+    penWeeklyMsg:           "⚠️ Penalización semanal aplicada",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -181,7 +186,12 @@ const translations = {
     redeemBtnLabel:         "Redeem",
     unknownChild:           "someone",
     notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"',
-    deleteTaskBtn:          "Delete"
+    deleteTaskBtn:          "Delete",
+    frequencyLabel:         "Frequency:",
+    frequencyDaily:         "Daily",
+    frequencyWeekly:        "Weekly",
+    penDailyMsg:            "⚠️ Daily penalty applied",
+    penWeeklyMsg:           "⚠️ Weekly penalty applied",
   }
 };
 
@@ -626,8 +636,8 @@ function flashMessage(text, duration = 1200) {
 }
 
 function applyDailyPenalties() {
-  const lang   = localStorage.getItem('lang') || 'es';
-  const t      = translations[lang];
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
 
   const now    = new Date();
   const cutoff = localStorage.getItem('cutoffTime') || '21:00';
@@ -639,11 +649,11 @@ function applyDailyPenalties() {
   let anyChange = false;
 
   tasks.forEach(t => {
-    if (!t.done && !t.penalized) {
+    if (t.frequency === 'daily' && !t.done && !t.penalized) {
       const stats = getStatsFor(t.childId);
-      stats.lost += t.points * 2;
-      t.penalized = true;
-      anyChange = true;
+      stats.lost     += t.points * 2;  // ×2
+      t.penalized     = true;
+      anyChange       = true;
     }
   });
 
@@ -651,7 +661,7 @@ function applyDailyPenalties() {
     saveStatsMap();
     saveTasks();
     updatePointDisplay();
-    flashMessage(t.penaltyAppliedMsg);
+    flashMessage(t.penDailyMsg);
   }
 }
 
@@ -1157,31 +1167,37 @@ document.getElementById('children-list')?.addEventListener('click', e => {
 
 // ➕ Evento Añadir Tarea
 document.getElementById('add-task')?.addEventListener('click', () => {
-  const lang = localStorage.getItem('lang') || 'es';
+  const lang      = localStorage.getItem('lang') || 'es';
+  const t         = translations[lang];
   const nameInput = document.getElementById('new-task-name');
   const ptsInput  = document.getElementById('new-task-points');
+  const freqSelect= document.getElementById('new-task-frequency');
   const name      = nameInput.value.trim();
   const points    = parseInt(ptsInput.value, 10);
+  const frequency = freqSelect.value; // "daily" o "weekly"
 
   if (!name || isNaN(points) || !activeChildId) {
-    return alert(translations[lang].createTaskInstructions);
+    return alert(t.createTaskInstructions); 
   }
 
   tasks.push({
     name,
     points,
-    done: false,
+    done:      false,
     penalized: false,
-    childId: activeChildId
+    frequency,                // ← nuevo campo
+    childId:   activeChildId
   });
   saveTasks();
   renderTasks();
   renderChildTasks();
   updatePointDisplay();
 
-  nameInput.value = '';
-  ptsInput.value  = '';
+  nameInput.value    = '';
+  ptsInput.value     = '';
+  freqSelect.value   = 'daily';
 });
+
 
 // — Editar / Eliminar tarea
 document.getElementById('tasks-manage')?.addEventListener('click', e => {
@@ -1276,8 +1292,8 @@ document.getElementById('rewards-manage')?.addEventListener('click', e => {
 
 
 document.getElementById('reset-week')?.addEventListener('click', () => {
-  const lang = localStorage.getItem('lang') || 'es';
-  const t    = translations[lang];
+  const lang  = localStorage.getItem('lang') || 'es';
+  const t     = translations[lang];
   const stats = getStatsFor(activeChildId);
 
   // A) Verifica actividad
@@ -1285,25 +1301,43 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
     return alert(t.noActivityMsg);
   }
 
-  // B) Regla de cierre (ya maneja sus propios alerts)
+  // B) Regla de cierre
   if (!canCloseWeek()) return;
 
-  // C) Confirmación
+  // C) Penalización de tareas “weekly” no realizadas (×3)
+  tasks.forEach(task => {
+    if (
+      task.childId === activeChildId &&
+      task.frequency === 'weekly' &&
+      !task.done &&
+      !task.penalized
+    ) {
+      stats.lost       += task.points * 3;
+      task.penalized    = true;
+    }
+  });
+  saveStatsMap();
+  saveTasks();
+  flashMessage(t.penWeeklyMsg);
+
+  // D) Confirmación de cierre
   if (!confirm(t.confirmCloseWeek)) return;
 
-// D) Genera la entrada con childId y sus stats
-const range = getCurrentWeekRange();
-weeklyHistory.push({
-  childId:   activeChildId,
-  earned:    stats.earned,
-  lost:      stats.lost,
-  redeemed:  stats.redeemed,
-  weekLabel: range.weekLabel,         // ← conservas tu etiqueta original
-  startDate: range.startDate,         // ← nuevo campo para traducción dinámica
-  endDate:   range.endDate,           // ← nuevo campo para traducción dinámica
-  timestamp: new Date().toISOString()
+  // E) Genera la entrada con childId y sus stats
+  const range = getCurrentWeekRange();
+  weeklyHistory.push({
+    childId:   activeChildId,
+    earned:    stats.earned,
+    lost:      stats.lost,
+    redeemed:  stats.redeemed,
+    weekLabel: range.weekLabel,
+    startDate: range.startDate,
+    endDate:   range.endDate,
+    timestamp: new Date().toISOString()
+  });
+  saveHistory();
 });
-saveHistory();
+
 
 
   // E) Reinicia SOLO los stats de ese niño y las tareas/recompensas
