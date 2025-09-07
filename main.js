@@ -763,6 +763,15 @@ function applyDailyPenalties() {
     saveTasks();
     updatePointDisplay();
     flashMessage(t.penDailyMsg);
+    //  Renovar las tareas diarias para el próximo ciclo
+    tasks.forEach(task => {
+      if (task.frequency === 'daily') {
+        task.done = false;
+        task.penalized = false;
+      }
+    });
+    saveTasks();
+    renderChildTasks();
   }
 }
 
@@ -905,7 +914,12 @@ function renderChildTasks() {
     const btn = document.createElement('button');
     btn.className = 'btn-success';
     btn.textContent = task.done ? t.markedDoneBtn : t.markDoneBtn;
-    btn.disabled   = task.done;
+    // desactiva si ya fue marcada o si es posterior al cutoff y aún no está hecha
+    const cutoff = localStorage.getItem('cutoffTime') || '21:00';
+    const [h, m] = cutoff.split(':').map(Number);
+    const cd     = new Date(); cd.setHours(h, m, 0, 0);
+    const afterCutoff = (new Date() > cd) && !task.done;
+    btn.disabled = task.done || afterCutoff;
     if (task.done) btn.classList.add('btn-done');
 
     btn.addEventListener('click', () => {
