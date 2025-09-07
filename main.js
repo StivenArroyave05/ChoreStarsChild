@@ -734,11 +734,17 @@ function renderChildLevel() {
       // Aplica puntos extra
       stats.earned += bonus;
       saveStatsMap();
-      alert(
-        `${t.levelUpMsg.replace('{level}', t[current.key])} y ganaste ${bonus} pts extra!`
-      );
+      const popup = document.createElement('div');
+  popup.className = 'level-popup';
+  popup.innerHTML = `🎉 ${t.levelUpMsg.replace('{level}', t[current.key])}<br>✨ +${bonus} pts extra!`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
     } else {
-      alert(t.levelUpMsg.replace('{level}', t[current.key]));
+      const popup = document.createElement('div');
+  popup.className = 'level-popup';
+  popup.innerHTML = `🎉 ${t.levelUpMsg.replace('{level}', t[current.key])}`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
     }
   }
 
