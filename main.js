@@ -758,10 +758,8 @@ function updatePointDisplay() {
   // stats del niño activo
   const stats = getStatsFor(activeChildId);
 
-  // badges globales según stats.earned de ese niño
-  badges = [];
-  if (stats.earned >= 300) badges.push({ icon: '🥇', bonus: 30 });
-  // … igual que antes, pero usando stats …
+  // ✅ Genera las insignias completas
+  generateBadges();
 
   const bonusPoints = badges.reduce((s, b) => s + b.bonus, 0);
   const totalEarned = stats.earned + bonusPoints;
