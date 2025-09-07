@@ -758,13 +758,27 @@ function renderChildTasks() {
 
   filtered.forEach((task, idx) => {
     const card = document.createElement('div');
-    card.className = 'task-card';
+    card.className = 'task-card flex justify-between items-center p-3 mb-2 bg-white rounded shadow';
 
-    // Nombre + puntos con sufijo traducido
-    const label = document.createElement('span');
-    label.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
+    // Contenedor de info (nombre, puntos, frecuencia)
+    const info = document.createElement('div');
+    info.className = 'flex flex-col';
 
-    // Botón traducido
+    // Nombre + puntos
+    const title = document.createElement('span');
+    title.className = 'font-medium';
+    title.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
+    info.appendChild(title);
+
+    // Frecuencia traducida
+    const freq = document.createElement('span');
+    freq.className = 'text-xs text-gray-500';
+    freq.textContent = task.frequency === 'weekly'
+      ? t.frequencyWeekly
+      : t.frequencyDaily;
+    info.appendChild(freq);
+
+    // Botón “Hecho” / “Done”
     const btn = document.createElement('button');
     btn.className = 'btn-success';
     btn.textContent = task.done ? t.markedDoneBtn : t.markDoneBtn;
@@ -793,12 +807,11 @@ function renderChildTasks() {
       setTimeout(() => sparkle.remove(), 800);
     });
 
-    card.appendChild(label);
+    card.appendChild(info);
     card.appendChild(btn);
     container.appendChild(card);
   });
 }
-
 
 function renderRewardsManage() {
   const c = document.getElementById('rewards-manage');
