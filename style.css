@@ -1096,3 +1096,17 @@ button {
 .redeemed-card button.share-btn:hover {
   background-color: #45a045;
 }
+
+
+/* Añade esto a tu CSS para la clase .level-badge */
+.level-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #ffffff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}

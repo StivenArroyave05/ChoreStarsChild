@@ -99,7 +99,15 @@ const translations = {
     penWeeklyMsg:           "⚠️ Penalización semanal aplicada",
     rewardStockLabel:       "Stock",
     rewardStockPlaceholder: "Stock",
-    outOfStockMsg:          "⚠️ Sin stock para esta recompensa"
+    outOfStockMsg:          "⚠️ Sin stock para esta recompensa",
+    levelNovice:            "Novato",
+    levelApprentice:        "Aprendiz",
+    levelExpert:            "Experto",
+    levelMaster:            "Maestro",
+    levelLegend:            "Leyenda",
+    levelLabel:             "Nivel: {level}",
+    nextLevelIn:            "Faltan {points} pts para {nextLevel}",
+    levelUpMsg:             "¡Felicidades! Has subido al nivel {level}",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -197,7 +205,15 @@ const translations = {
     penWeeklyMsg:           "⚠️ Weekly penalty applied",
     rewardStockLabel:       "Stock",
     rewardStockPlaceholder: "Stock",
-    outOfStockMsg:          "⚠️ Out of stock"
+    outOfStockMsg:          "⚠️ Out of stock",
+    levelNovice:            "Novice",
+    levelApprentice:        "Apprentice",
+    levelExpert:            "Expert",
+    levelMaster:            "Master",
+    levelLegend:            "Legend",
+    levelLabel:             "Level: {level}",
+    nextLevelIn:            "{points} pts to {nextLevel}",
+    levelUpMsg:             "Congrats! You've reached level {level}",
   }
 };
 
@@ -626,7 +642,7 @@ function renderBadges() {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// 4. Barra de progreso y puntos
+// 4. Barra de progreso, puntos y sistema de niveles o rangos.
 ////////////////////////////////////////////////////////////////////////////////
 function updateProgressBar() {
   const stats = getStatsFor(activeChildId);
@@ -636,6 +652,83 @@ function updateProgressBar() {
   if (bar) bar.style.width = `${pct}%`;
 }
 
+// 1) Define los umbrales de nivel justo después de tu objeto `translations`
+const levelThresholds = [
+  { key: 'levelNovice',     min:   0 },
+  { key: 'levelApprentice', min: 200 },
+  { key: 'levelExpert',     min: 500 },
+  { key: 'levelMaster',     min: 1000 },
+  { key: 'levelLegend',     min: 2000 }
+];
+
+// 0) Estado previo de niveles por niño
+let lastLevelMap = JSON.parse(localStorage.getItem('lastLevelMap')) || {};
+
+// 0b) Persiste el mapa
+function saveLastLevelMap() {
+  localStorage.setItem('lastLevelMap', JSON.stringify(lastLevelMap));
+}
+
+// 2) Función para calcular nivel actual y el siguiente
+function getCurrentLevel(points) {
+  let current = levelThresholds[0];
+  let next    = null;
+  for (let i = 0; i < levelThresholds.length; i++) {
+    if (points >= levelThresholds[i].min) {
+      current = levelThresholds[i];
+      next    = levelThresholds[i + 1] || null;
+    } else {
+      break;
+    }
+  }
+  return { current, next };
+}
+
+// 3) Función para renderizar el nivel del niño activo en el header
+function renderChildLevel() {
+  const label = document.getElementById('child-name-label');
+  if (!label) return;
+
+  let levelEl = document.getElementById('child-level');
+  if (!levelEl) {
+    levelEl = document.createElement('div');
+    levelEl.id = 'child-level';
+    levelEl.className = 'level-badge';
+    label.parentNode.insertBefore(levelEl, label.nextSibling);
+  }
+
+  // Calcula puntos totales
+  const stats = getStatsFor(activeChildId);
+  const bonus = badges.reduce((s, b) => s + b.bonus, 0);
+  const total = stats.earned + bonus - stats.lost - stats.redeemed;
+
+  // Nivel actual y siguiente
+  const { current, next } = getCurrentLevel(total);
+
+  // Traducciones
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
+  // Monta el texto del badge
+  let txt = t.levelLabel.replace('{level}', t[current.key]);
+  if (next) {
+    const need = next.min - total;
+    txt += ' • ' + t.nextLevelIn
+      .replace('{points}', need)
+      .replace('{nextLevel}', t[next.key]);
+  }
+  levelEl.textContent = txt;
+
+  // 🚀 Alerta si subió de nivel
+  const prev = lastLevelMap[activeChildId];
+  if (prev && prev !== current.key) {
+    alert(t.levelUpMsg.replace('{level}', t[current.key]));
+  }
+
+  // Actualiza el registro de niveles
+  lastLevelMap[activeChildId] = current.key;
+  saveLastLevelMap();
+}
 
 function updatePointDisplay() {
   console.log('✅ Entrando a updatePointDisplay');
@@ -659,6 +752,7 @@ function updatePointDisplay() {
 
   updateProgressBar();
   renderBadges();
+  renderChildLevel();
 }
 
 
