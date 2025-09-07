@@ -719,10 +719,28 @@ function renderTasks() {
     .filter(tk => tk.childId === activeChildId)
     .forEach((tk, i) => {
       const block = document.createElement('div');
-      block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
+      block.className =
+        'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
 
-      const label = document.createElement('span');
-      label.textContent = `${tk.name} (${tk.points} ${t.pointsSuffix})`;
+      // Info: nombre, puntos y frecuencia
+      const info = document.createElement('div');
+      info.className = 'flex flex-col';
+
+      const title = document.createElement('span');
+      title.textContent = `${tk.name} (${tk.points} ${t.pointsSuffix})`;
+      info.appendChild(title);
+
+      const freq = document.createElement('span');
+      freq.className = 'text-xs text-gray-500';
+      freq.textContent =
+        tk.frequency === 'weekly'
+          ? t.frequencyWeekly
+          : t.frequencyDaily;
+      info.appendChild(freq);
+
+      // Botones editar / eliminar
+      const actions = document.createElement('div');
+      actions.className = 'flex space-x-2';
 
       const editBtn = document.createElement('button');
       editBtn.className = 'btn-edit';
@@ -734,9 +752,12 @@ function renderTasks() {
       deleteBtn.dataset.index = i;
       deleteBtn.textContent = t.deleteTaskBtn;
 
-      block.appendChild(label);
-      block.appendChild(editBtn);
-      block.appendChild(deleteBtn);
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+
+      // Componer bloque
+      block.appendChild(info);
+      block.appendChild(actions);
       c.appendChild(block);
     });
 }
