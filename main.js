@@ -97,6 +97,9 @@ const translations = {
     frequencyWeekly:        "Semanal",
     penDailyMsg:            "⚠️ Penalización diaria aplicada",
     penWeeklyMsg:           "⚠️ Penalización semanal aplicada",
+    rewardStockLabel:       "Stock",
+    rewardStockPlaceholder: "Stock",
+    outOfStockMsg:          "⚠️ Sin stock para esta recompensa"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -192,6 +195,9 @@ const translations = {
     frequencyWeekly:        "Weekly",
     penDailyMsg:            "⚠️ Daily penalty applied",
     penWeeklyMsg:           "⚠️ Weekly penalty applied",
+    rewardStockLabel:       "Stock",
+    rewardStockPlaceholder: "Stock",
+    outOfStockMsg:          "⚠️ Out of stock"
   }
 };
 
@@ -963,80 +969,133 @@ function renderRewardsManage() {
 
   rewards.forEach((r, i) => {
     const block = document.createElement('div');
-    block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
+    block.className =
+      'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
 
+    // Mostrar nombre, costo y stock
     const label = document.createElement('span');
-    label.textContent = `${r.name} (${r.cost} ${t.pointsSuffix})`;
+    label.textContent =
+      `${r.name} (${r.cost} ${t.pointsSuffix}) • ${t.rewardStockLabel}: ${r.stock}`;
+    block.appendChild(label);
 
+    // Botón editar
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-edit';
     editBtn.dataset.index = i;
     editBtn.textContent = '✏️';
+    block.appendChild(editBtn);
 
+    // Botón eliminar
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-danger';
     deleteBtn.dataset.index = i;
     deleteBtn.textContent = t.deleteRewardBtn;
-
-    block.appendChild(label);
-    block.appendChild(editBtn);
     block.appendChild(deleteBtn);
+
     c.appendChild(block);
   });
 }
 
 
 function renderChildRewards() {
-  const c = document.getElementById('rewards-list');
-  if (!c) return;
+  const c      = document.getElementById('rewards-list');
+  const histC  = document.getElementById('redeemed-cards');
+  if (!c || !histC) return;
 
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
 
+  // lista disponible
   c.innerHTML = '';
-
   rewards.forEach((r, i) => {
     const block = document.createElement('div');
     block.className = 'reward-block';
 
-    if (r.redeemed) {
-      block.classList.add('redeemed');
-    }
-
-    // Nombre y costo traducido
+    // Nombre, costo y stock
     const span = document.createElement('span');
-    span.textContent = `${r.name} (${r.cost} ${t.pointsSuffix})`;
+    span.textContent =
+      `${r.name} (${r.cost} ${t.pointsSuffix}) • ${t.rewardStockLabel}: ${r.stock}`;
     block.appendChild(span);
 
-    if (r.redeemed) {
-      // Etiqueta “Canjeada por [Niño]” traducida
-      const child = children.find(c => c.id === r.redeemedBy);
-      const name  = child?.name || t.unknownChild;
-      const label = document.createElement('span');
-      label.className = 'text-green-800 ml-4';
-      label.textContent = t.redeemedByLabel.replace('{name}', name);
-      block.appendChild(label);
-
-      // Botón Compartir traducido
-      const shareBtn = document.createElement('button');
-      shareBtn.className   = 'share-btn';
-      shareBtn.textContent = t.shareBtnLabel;
-      shareBtn.addEventListener('click', () => shareReward(r.name));
-      block.appendChild(shareBtn);
-
+    // Botón canjear o sin stock
+    const btn = document.createElement('button');
+    btn.className = 'btn-primary';
+    if (r.stock < 1) {
+      btn.disabled    = true;
+      btn.textContent = t.outOfStockMsg;
     } else {
-      // Botón Canjear traducido
-      const btn = document.createElement('button');
-      btn.className     = 'btn-primary';
+      btn.disabled      = false;
       btn.textContent   = t.redeemBtnLabel;
       btn.dataset.index = i;
       btn.addEventListener('click', () => handleRewardRedemption(i));
-      block.appendChild(btn);
     }
+    block.appendChild(btn);
 
     c.appendChild(block);
   });
+
+  // historial de canjes en tarjetas
+  histC.innerHTML = '';
+  if (typeof redeemedHistory !== 'undefined') {
+    redeemedHistory.forEach(entry => {
+      const card = document.createElement('div');
+      card.className = 'redeemed-card p-2 bg-green-50 rounded mb-2';
+      card.innerHTML = `
+        <strong>${entry.rewardName}</strong>
+        <br/>
+        ${t.redeemedByLabel.replace('{name}', entry.childName)}
+        <br/>
+        <small>${new Date(entry.timestamp).toLocaleString()}</small>
+      `;
+      histC.appendChild(card);
+    });
+  }
 }
+
+function handleRewardRedemption(index) {
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+  const r    = rewards[index];
+  if (!r || r.stock < 1) return;
+
+  // verificar puntos
+  const stats    = getStatsFor(activeChildId);
+  const bonus    = badges.reduce((s, b) => s + b.bonus, 0);
+  const avail    = stats.earned + bonus - stats.lost - stats.redeemed;
+  if (avail < r.cost) {
+    return alert(t.notEnoughPoints.replace('{reward}', r.name));
+  }
+
+  // aplicar canje
+  stats.redeemed += r.cost;
+  r.stock--;
+  saveStatsMap();
+  saveRewards();
+
+  // agregar a historial de canjes
+  const child = children.find(c => c.id === activeChildId);
+  const childName = child?.name || t.unknownChild;
+  if (!window.redeemedHistory) window.redeemedHistory = [];
+  window.redeemedHistory.push({
+    rewardName: r.name,
+    childName,
+    timestamp: new Date().toISOString()
+  });
+
+  // refrescar UI
+  updatePointDisplay();
+  renderChildRewards();
+
+  // animación y compartir
+  const sparkle = document.createElement('div');
+  sparkle.className   = 'reward-sparkle';
+  sparkle.textContent = '🎉';
+  document.body.appendChild(sparkle);
+  setTimeout(() => sparkle.remove(), 800);
+
+  shareReward(r.name);
+}
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1047,22 +1106,23 @@ function handleRewardRedemption(index) {
   const t    = translations[lang];
 
   const r = rewards[index];
-  if (!r || r.redeemed) return;
+  // 0) Si no existe, ya fue canjeada o no hay stock, no seguimos
+  if (!r || r.redeemed || r.stock < 1) return;
 
   // 1) Verificar puntos disponibles
-  const stats   = getStatsFor(activeChildId);
-  const bonus   = badges.reduce((sum, b) => sum + b.bonus, 0);
+  const stats    = getStatsFor(activeChildId);
+  const bonus    = badges.reduce((sum, b) => sum + b.bonus, 0);
   const available = stats.earned + bonus - stats.lost - stats.redeemed;
-
   if (available < r.cost) {
     const msg = t.notEnoughPoints.replace('{reward}', r.name);
     return alert(msg);
   }
 
-  // 2) Aplicar canje
+  // 2) Aplicar canje y reducir stock
   stats.redeemed += r.cost;
   r.redeemed      = true;
   r.redeemedBy    = activeChildId;
+  r.stock--;               // ← dismunuir stock
 
   saveStatsMap();
   saveRewards();
@@ -1081,6 +1141,7 @@ function handleRewardRedemption(index) {
   // 5) Compartir
   shareReward(r.name);
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // 10. Historial semanal en ambas pestañas
@@ -1389,25 +1450,35 @@ document.getElementById('tasks-manage')?.addEventListener('click', e => {
 
 // ➕ Agregar Recompensa
 document.getElementById('add-reward')?.addEventListener('click', () => {
-  const lang     = localStorage.getItem('lang') || 'es';
-  const nameInput = document.getElementById('new-reward-name');
-  const costInput = document.getElementById('new-reward-cost');
-  const name      = nameInput.value.trim();
-  const cost      = parseInt(costInput.value, 10);
+  const lang       = localStorage.getItem('lang') || 'es';
+  const t          = translations[lang];
+  const nameInput  = document.getElementById('new-reward-name');
+  const costInput  = document.getElementById('new-reward-cost');
+  const stockInput = document.getElementById('new-reward-stock');
+  const name       = nameInput.value.trim();
+  const cost       = parseInt(costInput.value,   10);
+  const stock      = parseInt(stockInput?.value, 10);
 
-  if (!name || isNaN(cost)) {
-    return alert(translations[lang].invalidRewardNameCost);
+  if (!name || isNaN(cost) || isNaN(stock) || stock < 1) {
+    return alert(t.invalidRewardNameCost);
   }
 
-  rewards.push({ name, cost });
+  rewards.push({
+    name,
+    cost,
+    stock,
+    redeemed: false
+  });
   saveRewards();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
 
-  nameInput.value = '';
-  costInput.value = '';
+  nameInput.value  = '';
+  costInput.value  = '';
+  stockInput.value = '';
 });
+
 
 // — Editar / Eliminar recompensa
 document.getElementById('rewards-manage')?.addEventListener('click', e => {

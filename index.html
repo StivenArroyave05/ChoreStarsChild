@@ -138,6 +138,7 @@
     <!-- Rewards tab -->
     <section id="rewards" class="tab-content hidden space-y-4">
       <div id="rewards-list" class="space-y-2"></div>
+      <div id="redeemed-cards" class="mt-4"></div>
     </section>
 
     <!-- Settings tab -->
@@ -263,32 +264,48 @@
 </div>
 
 
-      <!-- Reward management -->
-      <div class="settings-section">
-        <label for="new-reward-name"
-               class="font-semibold text-lg block mb-2"
-               data-i18n="rewardManagementLabel">
-           Gestión de recompensas
-        </label>
-        <div class="flex gap-2 items-center">
-          <input id="new-reward-name"
-                 type="text"
-                 class="input flex-1"
-                 placeholder=""
-                 data-i18n-placeholder="rewardNamePlaceholder" />
-          <input id="new-reward-cost"
-                 type="number"
-                 class="input w-24"
-                 placeholder=""
-                 data-i18n-placeholder="rewardCostPlaceholder" />
-          <button id="add-reward"
-                  class="btn btn-warning"
-                  data-i18n="addRewardBtn">
-            Añadir recompensa
-          </button>
-        </div>
-        <div id="rewards-manage" class="cards-grid mt-4"></div>
-      </div>
+<!-- Reward management -->
+<div class="settings-section">
+  <label
+    for="new-reward-name"
+    class="font-semibold text-lg block mb-2"
+    data-i18n="rewardManagementLabel"
+  >
+    Gestión de recompensas
+  </label>
+  <div class="flex gap-2 items-center">
+    <input
+      id="new-reward-name"
+      type="text"
+      class="input flex-1"
+      placeholder=""
+      data-i18n-placeholder="rewardNamePlaceholder"
+    />
+    <input
+      id="new-reward-cost"
+      type="number"
+      class="input w-24"
+      placeholder=""
+      data-i18n-placeholder="rewardCostPlaceholder"
+    />
+    <input
+      id="new-reward-stock"
+      type="number"
+      class="input w-24"
+      placeholder=""
+      data-i18n-placeholder="rewardStockPlaceholder"
+    />
+    <button
+      id="add-reward"
+      class="btn btn-warning flex-shrink-0 px-4 py-2"
+      data-i18n="addRewardBtn"
+    >
+      Añadir recompensa
+    </button>
+  </div>
+  <div id="rewards-manage" class="cards-grid mt-4"></div>
+</div>
+
 
       <!-- Close week -->
       <div class="settings-section">
