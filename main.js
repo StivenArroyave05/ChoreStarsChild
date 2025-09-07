@@ -91,12 +91,7 @@ const translations = {
     redeemBtnLabel:         "Canjear",
     unknownChild:           "alguien",
     notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"',
-    deleteTaskBtn:          "Eliminar",
-    frequencyLabel:         "Frecuencia:",
-    frequencyDaily:         "Diaria",
-    frequencyWeekly:        "Semanal",
-    penDailyMsg:            "⚠️ Penalización diaria aplicada",
-    penWeeklyMsg:           "⚠️ Penalización semanal aplicada",
+    deleteTaskBtn:          "Eliminar"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -186,12 +181,7 @@ const translations = {
     redeemBtnLabel:         "Redeem",
     unknownChild:           "someone",
     notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"',
-    deleteTaskBtn:          "Delete",
-    frequencyLabel:         "Frequency:",
-    frequencyDaily:         "Daily",
-    frequencyWeekly:        "Weekly",
-    penDailyMsg:            "⚠️ Daily penalty applied",
-    penWeeklyMsg:           "⚠️ Weekly penalty applied",
+    deleteTaskBtn:          "Delete"
   }
 };
 
@@ -232,8 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
   renderBadges();
   updatePointDisplay();
   updateFooterVersion();
-  applyPendingDailyPenalties();
-  applyPendingWeeklyPenalties();
 
   // — 3.3) Bienvenida: ajustar select y ocultarla si ya hay idioma
   const welcomeSelect = document.getElementById('welcome-lang-select');
@@ -638,8 +626,8 @@ function flashMessage(text, duration = 1200) {
 }
 
 function applyDailyPenalties() {
-  const lang = localStorage.getItem('lang') || 'es';
-  const t    = translations[lang];
+  const lang   = localStorage.getItem('lang') || 'es';
+  const t      = translations[lang];
 
   const now    = new Date();
   const cutoff = localStorage.getItem('cutoffTime') || '21:00';
@@ -650,11 +638,11 @@ function applyDailyPenalties() {
 
   let anyChange = false;
 
-  tasks.forEach(t => {
-    if (t.frequency === 'daily' && !t.done && !t.penalized) {
-      const stats = getStatsFor(t.childId);
-      stats.lost     += t.points * 2;  // ×2
-      t.penalized     = true;
+  tasks.forEach(task => {
+    if (task.frequency === 'daily' && !task.done && !task.penalized) {
+      const stats = getStatsFor(task.childId);
+      stats.lost     += task.points * 2;  // ×2
+      task.penalized = true;
       anyChange       = true;
     }
   });
@@ -667,104 +655,6 @@ function applyDailyPenalties() {
   }
 }
 
-// ──────────────
-// Helpers para cálculos de clave de día/semana
-// ──────────────
-// Devuelve "YYYY-MM-DD" de hoy
-function getTodayKey() {
-  return new Date().toISOString().split('T')[0];
-}
-
-// Devuelve "YYYY-MM-DD" del lunes de la semana en curso
-function getCurrentWeekStartKey() {
-  const monday = getWeekStart(new Date()); // ya tienes getWeekStart()
-  return monday.toISOString().split('T')[0];
-}
-
-// ──────────────
-// 1) Penalizaciones diarias “pendientes”
-// ──────────────
-function applyPendingDailyPenalties() {
-  const lang     = localStorage.getItem('lang') || 'es';
-  const t        = translations[lang];
-  const todayKey = getTodayKey();
-  const lastKey  = localStorage.getItem('lastDailyPenalty') || '';
-
-  // Fecha límite de hoy (p.ej. "21:00")
-  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
-  const [h, m]   = cutoff.split(':').map(Number);
-  const cutoffDt = new Date();
-  cutoffDt.setHours(h, m, 0, 0);
-
-  // Si ya pasó el cutoff y aún no penalizamos hoy, aplicamos
-  if (new Date() > cutoffDt && todayKey !== lastKey) {
-    let anyChange = false;
-
-    tasks.forEach(task => {
-      if (task.frequency === 'daily' && !task.done && !task.penalized) {
-        const stats = getStatsFor(task.childId);
-        stats.lost     += task.points * 2;  // ×2
-        task.penalized  = true;
-        anyChange       = true;
-      }
-    });
-
-    if (anyChange) {
-      saveStatsMap();
-      saveTasks();
-      updatePointDisplay();
-      flashMessage(t.penDailyMsg);
-    }
-
-    // Marcamos que ya penalizamos hoy
-    localStorage.setItem('lastDailyPenalty', todayKey);
-  }
-}
-
-// ──────────────
-// 2) Penalizaciones semanales “pendientes”
-// ──────────────
-function applyPendingWeeklyPenalties() {
-  const lang        = localStorage.getItem('lang') || 'es';
-  const t           = translations[lang];
-  const weekKey     = getCurrentWeekStartKey();
-  const lastWeekKey = localStorage.getItem('lastWeeklyPenalty') || '';
-
-  // Calcula el domingo de esta semana + hora cutoff
-  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
-  const [h, m]   = cutoff.split(':').map(Number);
-  const sunday   = new Date(getWeekStart(new Date()));
-  sunday.setDate(sunday.getDate() + 6);
-  sunday.setHours(h, m, 0, 0);
-
-  // Si ya pasó domingo+corte y aún no penalizamos esta semana
-  if (new Date() > sunday && weekKey !== lastWeekKey) {
-    let anyChange = false;
-
-    tasks.forEach(task => {
-      if (
-        task.frequency === 'weekly' &&
-        !task.done &&
-        !task.penalized
-      ) {
-        const stats = getStatsFor(task.childId);
-        stats.lost     += task.points * 3;  // ×3
-        task.penalized  = true;
-        anyChange       = true;
-      }
-    });
-
-    if (anyChange) {
-      saveStatsMap();
-      saveTasks();
-      updatePointDisplay();
-      flashMessage(t.penWeeklyMsg);
-    }
-
-    // Marcamos que ya penalizamos esta semana
-    localStorage.setItem('lastWeeklyPenalty', weekKey);
-  }
-}
 
 /**
  * Intenta compartir vía Web Share API el mensaje:
@@ -819,28 +709,10 @@ function renderTasks() {
     .filter(tk => tk.childId === activeChildId)
     .forEach((tk, i) => {
       const block = document.createElement('div');
-      block.className =
-        'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
+      block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
 
-      // Info: nombre, puntos y frecuencia
-      const info = document.createElement('div');
-      info.className = 'flex flex-col';
-
-      const title = document.createElement('span');
-      title.textContent = `${tk.name} (${tk.points} ${t.pointsSuffix})`;
-      info.appendChild(title);
-
-      const freq = document.createElement('span');
-      freq.className = 'text-xs text-gray-500';
-      freq.textContent =
-        tk.frequency === 'weekly'
-          ? t.frequencyWeekly
-          : t.frequencyDaily;
-      info.appendChild(freq);
-
-      // Botones editar / eliminar
-      const actions = document.createElement('div');
-      actions.className = 'flex space-x-2';
+      const label = document.createElement('span');
+      label.textContent = `${tk.name} (${tk.points} ${t.pointsSuffix})`;
 
       const editBtn = document.createElement('button');
       editBtn.className = 'btn-edit';
@@ -852,12 +724,9 @@ function renderTasks() {
       deleteBtn.dataset.index = i;
       deleteBtn.textContent = t.deleteTaskBtn;
 
-      actions.appendChild(editBtn);
-      actions.appendChild(deleteBtn);
-
-      // Componer bloque
-      block.appendChild(info);
-      block.appendChild(actions);
+      block.appendChild(label);
+      block.appendChild(editBtn);
+      block.appendChild(deleteBtn);
       c.appendChild(block);
     });
 }
@@ -879,27 +748,13 @@ function renderChildTasks() {
 
   filtered.forEach((task, idx) => {
     const card = document.createElement('div');
-    card.className = 'task-card flex justify-between items-center p-3 mb-2 bg-white rounded shadow';
+    card.className = 'task-card';
 
-    // Contenedor de info (nombre, puntos, frecuencia)
-    const info = document.createElement('div');
-    info.className = 'flex flex-col';
+    // Nombre + puntos con sufijo traducido
+    const label = document.createElement('span');
+    label.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
 
-    // Nombre + puntos
-    const title = document.createElement('span');
-    title.className = 'font-medium';
-    title.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
-    info.appendChild(title);
-
-    // Frecuencia traducida
-    const freq = document.createElement('span');
-    freq.className = 'text-xs text-gray-500';
-    freq.textContent = task.frequency === 'weekly'
-      ? t.frequencyWeekly
-      : t.frequencyDaily;
-    info.appendChild(freq);
-
-    // Botón “Hecho” / “Done”
+    // Botón traducido
     const btn = document.createElement('button');
     btn.className = 'btn-success';
     btn.textContent = task.done ? t.markedDoneBtn : t.markDoneBtn;
@@ -928,11 +783,12 @@ function renderChildTasks() {
       setTimeout(() => sparkle.remove(), 800);
     });
 
-    card.appendChild(info);
+    card.appendChild(label);
     card.appendChild(btn);
     container.appendChild(card);
   });
 }
+
 
 function renderRewardsManage() {
   const c = document.getElementById('rewards-manage');
@@ -1311,15 +1167,15 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   const frequency = freqSelect.value; // "daily" o "weekly"
 
   if (!name || isNaN(points) || !activeChildId) {
-    return alert(t.createTaskInstructions); 
+    return alert(t.createTaskInstructions);
   }
 
   tasks.push({
     name,
     points,
+    frequency,     // ← nuevo campo
     done:      false,
     penalized: false,
-    frequency,                // ← nuevo campo
     childId:   activeChildId
   });
   saveTasks();
@@ -1425,19 +1281,17 @@ document.getElementById('rewards-manage')?.addEventListener('click', e => {
 });
 
 
-// ➡️ Cerrar semana y guardar historial
 document.getElementById('reset-week')?.addEventListener('click', () => {
-  // 0) Traducción
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
+  const stats = getStatsFor(activeChildId);
 
   // A) Verifica actividad
-  const stats = getStatsFor(activeChildId);
   if (stats.earned === 0 && stats.lost === 0 && stats.redeemed === 0) {
     return alert(t.noActivityMsg);
   }
 
-  // B) Regla de cierre
+  // B) Regla de cierre (ya maneja sus propios alerts)
   if (!canCloseWeek()) return;
 
   // C) Penalización de tareas “weekly” no realizadas (×3)
@@ -1448,32 +1302,31 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
       !task.done &&
       !task.penalized
     ) {
-      stats.lost     += task.points * 3;
-      task.penalized  = true;
+      const stats = getStatsFor(task.childId);
+      stats.lost     += task.points * 3;  // ×3
+      task.penalized = true;
     }
   });
   saveStatsMap();
   saveTasks();
   flashMessage(t.penWeeklyMsg);
 
-  // D) Confirmación de cierre
-  if (!confirm(t.confirmCloseWeek)) return;
+// D) Genera la entrada con childId y sus stats
+const range = getCurrentWeekRange();
+weeklyHistory.push({
+  childId:   activeChildId,
+  earned:    stats.earned,
+  lost:      stats.lost,
+  redeemed:  stats.redeemed,
+  weekLabel: range.weekLabel,         // ← conservas tu etiqueta original
+  startDate: range.startDate,         // ← nuevo campo para traducción dinámica
+  endDate:   range.endDate,           // ← nuevo campo para traducción dinámica
+  timestamp: new Date().toISOString()
+});
+saveHistory();
 
-  // E) Genera la entrada en history
-  const range = getCurrentWeekRange();
-  weeklyHistory.push({
-    childId:   activeChildId,
-    earned:    stats.earned,
-    lost:      stats.lost,
-    redeemed:  stats.redeemed,
-    weekLabel: range.weekLabel,
-    startDate: range.startDate,
-    endDate:   range.endDate,
-    timestamp: new Date().toISOString()
-  });
-  saveHistory();
 
-  // F) Reinicia stats y filtra tareas/recompensas
+  // E) Reinicia SOLO los stats de ese niño y las tareas/recompensas
   weeklyStatsMap[activeChildId] = getDefaultStats();
   saveStatsMap();
   tasks   = tasks.filter(t => t.childId !== activeChildId);
@@ -1481,7 +1334,7 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   saveTasks();
   saveRewards();
 
-  // G) Refresca UI
+  // F) Refresca UI
   renderTasks();
   renderChildTasks();
   renderRewardsManage();
@@ -1490,10 +1343,9 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
   renderWeeklyHistory();
   showTab('tasks');
 
-  // H) Notificación final
+  // G) Notificación final traducida
   alert(t.weekClosedMsg);
 });
-
 
 
   // 🔄 Reset completo de la app (traducción total)
@@ -1627,6 +1479,9 @@ document.getElementById('install-updates')
     // 3) Feedback al usuario mediante flashMessage traducido
     flashMessage(t.searchingUpdates);
   });
+
+
+});
 
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active

@@ -212,54 +212,31 @@
       </div>
 
       <!-- Task management -->
-<div class="settings-section">
-  <label 
-    for="new-task-name"
-    class="font-semibold text-lg block mb-2"
-    data-i18n="taskManagementLabel"
-  >
-    📝 Gestión de tareas
-  </label>
-
-  <div class="flex flex-wrap gap-2 items-center">
-    <!-- Nombre: ocupa el espacio restante, pero nunca menos de 150px -->
-    <input
-      id="new-task-name"
-      type="text"
-      class="input flex-grow min-w-[150px] px-3 py-2"
-      placeholder=""
-      data-i18n-placeholder="taskNamePlaceholder"
-    />
-
-    <!-- Puntos: fijo y estrecho -->
-    <input
-      id="new-task-points"
-      type="number"
-      class="input w-20 px-3 py-2"
-      placeholder=""
-      data-i18n-placeholder="taskPointsPlaceholder"
-    />
-
-    <!-- Frecuencia: ancho medio consistente -->
-    <select
-      id="new-task-frequency"
-      class="input w-32 px-3 py-2"
-      aria-label="Frequency selector"
-    >
-      <option value="daily"   data-i18n="frequencyDaily"></option>
-      <option value="weekly"  data-i18n="frequencyWeekly"></option>
-    </select>
-
-    <!-- Botón: tamaño automático, sin crecer -->
-    <button
-      id="add-task"
-      class="btn btn-success flex-shrink-0 px-4 py-2"
-      data-i18n="addTaskBtn"
-    ></button>
-  </div>
-
-  <div id="tasks-manage" class="cards-grid mt-4"></div>
-</div>
+      <div class="settings-section">
+        <label for="new-task-name"
+               class="font-semibold text-lg block mb-2"
+               data-i18n="taskManagementLabel">
+          📝 Gestión de tareas
+        </label>
+        <div class="flex gap-2 items-center">
+          <input id="new-task-name"
+                 type="text"
+                 class="input flex-1"
+                 placeholder=""
+                 data-i18n-placeholder="taskNamePlaceholder" />
+          <input id="new-task-points"
+                 type="number"
+                 class="input w-24"
+                 placeholder=""
+                 data-i18n-placeholder="taskPointsPlaceholder" />
+          <button id="add-task"
+                  class="btn btn-success"
+                  data-i18n="addTaskBtn">
+            Añadir tarea
+          </button>
+        </div>
+        <div id="tasks-manage" class="cards-grid mt-4"></div>
+      </div>
 
       <!-- Reward management -->
       <div class="settings-section">
@@ -340,8 +317,8 @@
           </button>
         </div>
       </div>
-
     </section>
+    
   </main>
 
 <!-- Modal resumen semanal funcional -->
