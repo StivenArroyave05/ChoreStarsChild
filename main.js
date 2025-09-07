@@ -1494,9 +1494,6 @@ document.getElementById('install-updates')
     flashMessage(t.searchingUpdates);
   });
 
-
-});
-
 /**
  * Envía mensaje SKIP_WAITING al SW y recarga la página cuando se active
  */
@@ -1510,5 +1507,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
