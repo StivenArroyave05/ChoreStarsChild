@@ -211,7 +211,7 @@
         </div>
       </div>
 
-      <!-- Task management -->
+<!-- Task management -->
 <div class="settings-section">
   <label 
     for="new-task-name"
@@ -221,49 +221,46 @@
     📝 Gestión de tareas
   </label>
 
-  <div class="flex gap-2 items-center">
+  <div class="flex flex-wrap gap-2 items-center">
+    <!-- Nombre: ocupa el espacio restante, pero nunca menos de 150px -->
     <input
       id="new-task-name"
       type="text"
-      class="input flex-1"
+      class="input flex-grow min-w-[150px] px-3 py-2"
       placeholder=""
       data-i18n-placeholder="taskNamePlaceholder"
     />
 
+    <!-- Puntos: fijo y estrecho -->
     <input
       id="new-task-points"
       type="number"
-      class="input w-24"
+      class="input w-20 px-3 py-2 text-center"
       placeholder=""
       data-i18n-placeholder="taskPointsPlaceholder"
     />
 
-    <div class="flex items-center gap-1">
-      <span 
-        class="font-medium"
-        data-i18n="frequencyLabel"
-      ></span>
-      <select
-        id="new-task-frequency"
-        class="input border rounded p-1"
-        aria-label="Frequency selector"
-      >
-        <option value="daily"   data-i18n="frequencyDaily">Diaria</option>
-        <option value="weekly"  data-i18n="frequencyWeekly">Semanal</option>
-      </select>
-    </div>
+    <!-- Frecuencia: ancho medio consistente -->
+    <select
+      id="new-task-frequency"
+      class="input w-32 px-3 py-2"
+      aria-label="Frequency selector"
+    >
+      <option value="daily"   data-i18n="frequencyDaily"></option>
+      <option value="weekly"  data-i18n="frequencyWeekly"></option>
+    </select>
 
+    <!-- Botón: tamaño automático, sin crecer -->
     <button
       id="add-task"
-      class="btn btn-success"
+      class="btn btn-success flex-shrink-0 px-4 py-2"
       data-i18n="addTaskBtn"
-    >
-      Añadir tarea
-    </button>
+    ></button>
   </div>
 
   <div id="tasks-manage" class="cards-grid mt-4"></div>
 </div>
+
 
       <!-- Reward management -->
       <div class="settings-section">
