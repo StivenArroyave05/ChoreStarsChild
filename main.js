@@ -91,7 +91,7 @@ const translations = {
     redeemBtnLabel:         "Canjear",
     unknownChild:           "alguien",
     notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"',
-    deleteTaskBtn:          "Eliminar"
+    deleteTaskBtn:          "Eliminar",
     frequencyLabel:         "Frecuencia:",
     frequencyDaily:         "Diaria",
     frequencyWeekly:        "Semanal",
@@ -1510,4 +1510,5 @@ function sendSkipWaiting(worker) {
     }
   });
 }
+
 
