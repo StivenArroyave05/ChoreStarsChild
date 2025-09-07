@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.01";  // Actualízalo en cada release
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -90,7 +90,8 @@ const translations = {
     shareBtnLabel:          "Compartir",
     redeemBtnLabel:         "Canjear",
     unknownChild:           "alguien",
-    notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"'
+    notEnoughPoints:        '⚠️ No tienes suficientes puntos para "{reward}"',
+    deleteTaskBtn:          "Eliminar"
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -179,7 +180,8 @@ const translations = {
     shareBtnLabel:          "Share",
     redeemBtnLabel:         "Redeem",
     unknownChild:           "someone",
-    notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"'
+    notEnoughPoints:        '⚠️ You don’t have enough points for "{reward}"',
+    deleteTaskBtn:          "Delete"
   }
 };
 
@@ -697,19 +699,38 @@ function shareReward(rewardName) {
 function renderTasks() {
   const c = document.getElementById('tasks-manage');
   if (!c) return;
-  c.innerHTML = '';
-  tasks
-    .filter(t => t.childId === activeChildId)         // ¡filtrar por niño!
-    .forEach((t, i) => {
-      c.innerHTML += `
-        <div class="reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2">
-         <span>${t.name} (${t.points} pts)</span>
-         <button class="btn-edit"   data-index="${i}">✏️</button>
-         <button class="btn-danger" data-index="${i}">Eliminar</button>
-        </div>`;
 
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+
+  c.innerHTML = '';
+
+  tasks
+    .filter(t => t.childId === activeChildId)
+    .forEach((t, i) => {
+      const block = document.createElement('div');
+      block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
+
+      const label = document.createElement('span');
+      label.textContent = `${t.name} (${t.points} ${t.pointsSuffix})`;
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-edit';
+      editBtn.dataset.index = i;
+      editBtn.textContent = '✏️';
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn-danger';
+      deleteBtn.dataset.index = i;
+      deleteBtn.textContent = t.deleteTaskBtn;
+
+      block.appendChild(label);
+      block.appendChild(editBtn);
+      block.appendChild(deleteBtn);
+      c.appendChild(block);
     });
 }
+
 
 /**
  * Renderiza las tareas del niño activo dentro de #tasks-list
@@ -1455,5 +1476,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
