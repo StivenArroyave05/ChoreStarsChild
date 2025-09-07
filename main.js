@@ -706,13 +706,13 @@ function renderTasks() {
   c.innerHTML = '';
 
   tasks
-    .filter(t => t.childId === activeChildId)
-    .forEach((t, i) => {
+    .filter(tk => tk.childId === activeChildId)
+    .forEach((tk, i) => {
       const block = document.createElement('div');
       block.className = 'reward-block flex justify-between items-center bg-gray-100 p-2 rounded mb-2';
 
       const label = document.createElement('span');
-      label.textContent = `${t.name} (${t.points} ${t.pointsSuffix})`;
+      label.textContent = `${tk.name} (${tk.points} ${t.pointsSuffix})`;
 
       const editBtn = document.createElement('button');
       editBtn.className = 'btn-edit';
