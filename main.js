@@ -655,11 +655,18 @@ function updateProgressBar() {
 // 1) Define los umbrales de nivel justo después de tu objeto `translations`
 const levelThresholds = [
   { key: 'levelNovice',     min:   0 },
-  { key: 'levelApprentice', min: 200 },
-  { key: 'levelExpert',     min: 500 },
-  { key: 'levelMaster',     min: 1000 },
-  { key: 'levelLegend',     min: 2000 }
+  { key: 'levelApprentice', min: 500 },
+  { key: 'levelExpert',     min: 1500 },
+  { key: 'levelMaster',     min: 3000 },
+  { key: 'levelLegend',     min: 5000 }
 ];
+
+const levelBonusMap = {
+  levelApprentice:  50,
+  levelExpert:     100,
+  levelMaster:     200,
+  levelLegend:     500
+};
 
 // 0) Estado previo de niveles por niño
 let lastLevelMap = JSON.parse(localStorage.getItem('lastLevelMap')) || {};
@@ -699,8 +706,8 @@ function renderChildLevel() {
 
   // Calcula puntos totales
   const stats = getStatsFor(activeChildId);
-  const bonus = badges.reduce((s, b) => s + b.bonus, 0);
-  const total = stats.earned + bonus - stats.lost - stats.redeemed;
+  const bonusPts = badges.reduce((s, b) => s + b.bonus, 0);
+  const total    = stats.earned + bonusPts - stats.lost - stats.redeemed;
 
   // Nivel actual y siguiente
   const { current, next } = getCurrentLevel(total);
@@ -709,7 +716,7 @@ function renderChildLevel() {
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
 
-  // Monta el texto del badge
+  // Texto del badge
   let txt = t.levelLabel.replace('{level}', t[current.key]);
   if (next) {
     const need = next.min - total;
@@ -719,10 +726,20 @@ function renderChildLevel() {
   }
   levelEl.textContent = txt;
 
-  // 🚀 Alerta si subió de nivel
+  // 🚀 Alerta de subida de nivel con bonus para niveles ≥ Apprentice
   const prev = lastLevelMap[activeChildId];
   if (prev && prev !== current.key) {
-    alert(t.levelUpMsg.replace('{level}', t[current.key]));
+    const bonus = levelBonusMap[current.key] || 0;
+    if (bonus > 0) {
+      // Aplica puntos extra
+      stats.earned += bonus;
+      saveStatsMap();
+      alert(
+        `${t.levelUpMsg.replace('{level}', t[current.key])} y ganaste ${bonus} pts extra!`
+      );
+    } else {
+      alert(t.levelUpMsg.replace('{level}', t[current.key]));
+    }
   }
 
   // Actualiza el registro de niveles
