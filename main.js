@@ -1005,19 +1005,17 @@ function renderChildRewards() {
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
 
-  // lista disponible
+  // Lista de recompensas disponibles
   c.innerHTML = '';
   rewards.forEach((r, i) => {
     const block = document.createElement('div');
     block.className = 'reward-block';
 
-    // Nombre, costo y stock
     const span = document.createElement('span');
     span.textContent =
       `${r.name} (${r.cost} ${t.pointsSuffix}) • ${t.rewardStockLabel}: ${r.stock}`;
     block.appendChild(span);
 
-    // Botón canjear o sin stock
     const btn = document.createElement('button');
     btn.className = 'btn-primary';
     if (r.stock < 1) {
@@ -1034,24 +1032,39 @@ function renderChildRewards() {
     c.appendChild(block);
   });
 
-  // historial de canjes en tarjetas
+  // Tarjetas de recompensas canjeadas
   histC.innerHTML = '';
   if (typeof redeemedHistory !== 'undefined') {
     redeemedHistory.forEach(entry => {
       const card = document.createElement('div');
       card.className = 'redeemed-card p-2 bg-green-50 rounded mb-2';
-      card.innerHTML = `
-        <strong>${entry.rewardName}</strong>
-        <br/>
+
+      const title = document.createElement('strong');
+      title.textContent = entry.rewardName;
+      card.appendChild(title);
+
+      const info = document.createElement('div');
+      info.innerHTML = `
         ${t.redeemedByLabel.replace('{name}', entry.childName)}
-        <br/>
-        <small>${new Date(entry.timestamp).toLocaleString()}</small>
+        <br><small>${new Date(entry.timestamp).toLocaleString()}</small>
       `;
+      card.appendChild(info);
+
+      const shareBtn = document.createElement('button');
+      shareBtn.className   = 'share-btn mt-2';
+      shareBtn.textContent = t.shareBtnLabel;
+      shareBtn.addEventListener('click', () => shareReward(entry.rewardName));
+      card.appendChild(shareBtn);
+
       histC.appendChild(card);
     });
   }
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+// 9. Canje de recompensas
+////////////////////////////////////////////////////////////////////////////////
 function handleRewardRedemption(index) {
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
@@ -1093,52 +1106,6 @@ function handleRewardRedemption(index) {
   document.body.appendChild(sparkle);
   setTimeout(() => sparkle.remove(), 800);
 
-  shareReward(r.name);
-}
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-// 9. Canje de recompensas
-////////////////////////////////////////////////////////////////////////////////
-function handleRewardRedemption(index) {
-  const lang = localStorage.getItem('lang') || 'es';
-  const t    = translations[lang];
-
-  const r = rewards[index];
-  // 0) Si no existe, ya fue canjeada o no hay stock, no seguimos
-  if (!r || r.redeemed || r.stock < 1) return;
-
-  // 1) Verificar puntos disponibles
-  const stats    = getStatsFor(activeChildId);
-  const bonus    = badges.reduce((sum, b) => sum + b.bonus, 0);
-  const available = stats.earned + bonus - stats.lost - stats.redeemed;
-  if (available < r.cost) {
-    const msg = t.notEnoughPoints.replace('{reward}', r.name);
-    return alert(msg);
-  }
-
-  // 2) Aplicar canje y reducir stock
-  stats.redeemed += r.cost;
-  r.redeemed      = true;
-  r.redeemedBy    = activeChildId;
-  r.stock--;               // ← dismunuir stock
-
-  saveStatsMap();
-  saveRewards();
-
-  // 3) Refrescar UI
-  updatePointDisplay();
-  renderChildRewards();
-
-  // 4) Animación “pop”
-  const sparkle = document.createElement('div');
-  sparkle.className   = 'reward-sparkle';
-  sparkle.textContent = '🎉';
-  document.body.appendChild(sparkle);
-  setTimeout(() => sparkle.remove(), 800);
-
-  // 5) Compartir
   shareReward(r.name);
 }
 
