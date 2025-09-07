@@ -1428,8 +1428,8 @@ document.getElementById('rewards-manage')?.addEventListener('click', e => {
 // ➡️ Cerrar semana y guardar historial
 document.getElementById('reset-week')?.addEventListener('click', () => {
   // 0) Traducción
-  const lang  = localStorage.getItem('lang') || 'es';
-  const t     = translations[lang];
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
 
   // A) Verifica actividad
   const stats = getStatsFor(activeChildId);
@@ -1448,8 +1448,8 @@ document.getElementById('reset-week')?.addEventListener('click', () => {
       !task.done &&
       !task.penalized
     ) {
-      stats.lost      += task.points * 3;
-      task.penalized   = true;
+      stats.lost     += task.points * 3;
+      task.penalized  = true;
     }
   });
   saveStatsMap();
