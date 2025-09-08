@@ -1136,3 +1136,27 @@ button {
   90%  { opacity: 1; }
   100% { opacity: 0; transform: translateX(-50%) scale(0.8); }
 }
+
+
+#task-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.suggestion-btn {
+  background: linear-gradient(135deg, #ffdd57, #ffb347);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.suggestion-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}

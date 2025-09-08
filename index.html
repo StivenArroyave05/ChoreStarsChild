@@ -86,6 +86,8 @@
       <section class="tasks-section text-center">
         <label class="tasks-title" data-i18n="assignedTasks">📝 Tareas asignadas</label>
         <div id="tasks-list" class="tasks-grid"></div>
+	<!-- dentro de tu sección de tareas -->
+	<div id="task-suggestions" class="mt-4"></div>
       </section>
 
       <div class="bg-gray-200 rounded-full h-4 w-full">
@@ -148,25 +150,40 @@
         Espacio para uso exclusivo de los padres
       </p>
 
-      <!-- Child management -->
-      <div class="settings-section">
-        <label class="font-semibold text-lg block mb-2" data-i18n="childManagementLabel">
-           Gestión de niños
-        </label>
-        <div class="flex gap-2 items-center">
-          <input id="new-child-name"
-                 type="text"
-                 class="input flex-1"
-                 placeholder=""
-                 data-i18n-placeholder="childNamePlaceholder" />
-          <button id="add-child"
-                  class="btn btn-success"
-                  data-i18n="addChildBtn">
-            Añadir niño
-          </button>
-        </div>
-        <ul id="children-list" class="space-y-2 mt-4"></ul>
-      </div>
+<!-- Child management -->
+<div class="settings-section">
+  <label
+    class="font-semibold text-lg block mb-2"
+    data-i18n="childManagementLabel"
+  >
+    Gestión de niños
+  </label>
+  <div class="flex gap-2 items-center">
+    <input
+      id="new-child-name"
+      type="text"
+      class="input flex-1"
+      placeholder=""
+      data-i18n-placeholder="childNamePlaceholder"
+    />
+    <input
+      id="new-child-age"
+      type="number"
+      class="input w-20"
+      placeholder=""
+      data-i18n-placeholder="childAgePlaceholder"
+      min="1"
+    />
+    <button
+      id="add-child"
+      class="btn btn-success"
+      data-i18n="addChildBtn"
+    >
+      Añadir niño
+    </button>
+  </div>
+  <ul id="children-list" class="space-y-2 mt-4"></ul>
+</div>
 
       <!-- Daily cutoff -->
       <div class="settings-section">

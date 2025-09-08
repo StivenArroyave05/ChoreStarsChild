@@ -108,6 +108,8 @@ const translations = {
     levelLabel:             "Nivel: {level}",
     nextLevelIn:            "Faltan {points} pts para {nextLevel}",
     levelUpMsg:             "¡Felicidades! Has subido al nivel {level}",
+    childAgePlaceholder:    "Edad",
+    invalidChildNameOrAge:  "Por favor ingresa un nombre y edad válidos",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -214,6 +216,8 @@ const translations = {
     levelLabel:             "Level: {level}",
     nextLevelIn:            "{points} pts to {nextLevel}",
     levelUpMsg:             "Congrats! You've reached level {level}",
+    childAgePlaceholder:    "Age",
+    invalidChildNameOrAge:  "Please enter a valid name and age",
   }
 };
 
@@ -1066,6 +1070,7 @@ function renderChildTasks() {
       btn.classList.add('btn-done');
       updatePointDisplay();
       renderTasks();
+      renderTaskSuggestions();
 
       const sparkle = document.createElement('div');
       sparkle.className   = 'sparkle';
@@ -1422,20 +1427,29 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // ➕ Evento Añadir Niño
 document.getElementById('add-child')?.addEventListener('click', () => {
-  const lang = localStorage.getItem('lang') || 'es';
-  const input = document.getElementById('new-child-name');
-  const name  = input.value.trim();
-  if (!name) {
-    return alert(translations[lang].invalidChildName);
+  const lang      = localStorage.getItem('lang') || 'es';
+  const t         = translations[lang];
+  const nameInput = document.getElementById('new-child-name');
+  const ageInput  = document.getElementById('new-child-age');
+
+  const name = nameInput.value.trim();
+  const age  = parseInt(ageInput.value, 10);
+
+  // Valida nombre y edad
+  if (!name || isNaN(age) || age < 1) {
+    return alert(t.invalidChildNameOrAge);
   }
 
   const id = Date.now().toString();
-  children.push({ id, name });
+  children.push({ id, name, age });
   saveChildren();
   renderChildrenList();
   selectChild(id);
-  input.value = '';
+
+  nameInput.value = '';
+  ageInput.value  = '';
 });
+
 
 // ➖ Evento Seleccionar / Eliminar Niño
 document.getElementById('children-list')?.addEventListener('click', e => {
@@ -1466,6 +1480,7 @@ document.getElementById('children-list')?.addEventListener('click', e => {
     renderTasks();
     renderChildTasks();
     updatePointDisplay();
+    renderTaskSuggestions();
   }
 });
 
@@ -1496,11 +1511,88 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   renderTasks();
   renderChildTasks();
   updatePointDisplay();
+  renderTaskSuggestions();
 
   nameInput.value    = '';
   ptsInput.value     = '';
   freqSelect.value   = 'daily';
 });
+
+// ➕ Catálogo de posibles sugerencias
+const taskSuggestions = [
+  { name: 'Revisar mochila',            dayOfWeek: 0 },         // domingo
+  { name: 'Empacar lonchera',           dayOfWeek: 1 },         // lunes
+  { name: 'Leer 10 páginas',            minAge: 7 },
+  { name: 'Ordenar escritorio',         minAge: 6 },
+  { name: 'Práctica de matemáticas',    weekdays: [1,2,3,4,5] },
+  { name: 'Tocar instrumento 15 min',   minAge: 8 },
+  { name: 'Repasar inglés',             minAge: 9 },
+  { name: 'Ayudar en la cocina',        maxAge: 5 },
+  { name: 'Regar plantas',              weekdays: [2,5] },
+  // … añade según tu contexto …
+];
+
+function generateTaskSuggestions() {
+  const child = children.find(c => c.id === activeChildId);
+  const age   = child?.age || 0;
+  const today = new Date().getDay(); // 0=domingo,1=lunes…
+  const doneNames = tasks
+    .filter(t => t.childId === activeChildId)
+    .map(t => t.name);
+
+  return taskSuggestions.filter(s => {
+    // 1) Día de la semana
+    if (s.dayOfWeek != null && s.dayOfWeek !== today) return false;
+    if (s.weekdays && !s.weekdays.includes(today)) return false;
+
+    // 2) Edad
+    if (s.minAge != null && age < s.minAge) return false;
+    if (s.maxAge != null && age > s.maxAge) return false;
+
+    // 3) No proponer tarea ya creada o hecha
+    if (doneNames.includes(s.name)) return false;
+
+    return true;
+  }).map(s => s.name);
+}
+
+function renderTaskSuggestions() {
+  const c = document.getElementById('task-suggestions');
+  if (!c) return;
+  c.innerHTML = '';
+
+  const suggestions = generateTaskSuggestions();
+  suggestions.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-btn';
+    btn.textContent = name;
+    btn.addEventListener('click', () => addSuggestedTask(name));
+    c.appendChild(btn);
+  });
+}
+
+function addSuggestedTask(name) {
+  const lang     = localStorage.getItem('lang') || 'es';
+  const t        = translations[lang];
+  const defaultPts = 10;
+  const defaultFreq = 'daily';
+
+  tasks.push({
+    name,
+    points:     defaultPts,
+    frequency:  defaultFreq,
+    done:       false,
+    penalized:  false,
+    childId:    activeChildId
+  });
+
+  saveTasks();
+  renderTasks();
+  renderChildTasks();
+  updatePointDisplay();
+  renderTaskSuggestions(); // refresca sugerencias
+}
+
 
 
 // — Editar / Eliminar tarea
@@ -1524,6 +1616,7 @@ document.getElementById('tasks-manage')?.addEventListener('click', e => {
       renderTasks();
       renderChildTasks();
       updatePointDisplay();
+      renderTaskSuggestions();
     }
     return;
   }
@@ -1536,6 +1629,7 @@ document.getElementById('tasks-manage')?.addEventListener('click', e => {
     renderTasks();
     renderChildTasks();
     updatePointDisplay();
+    renderTaskSuggestions();
   }
 });
 
@@ -1658,6 +1752,7 @@ saveHistory();
   // F) Refresca UI
   renderTasks();
   renderChildTasks();
+  renderTaskSuggestions();
   renderRewardsManage();
   renderChildRewards();
   updatePointDisplay();
