@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.2";  // Actualízalo en cada release
+const APP_VERSION = "1.0.01";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -2074,4 +2074,5 @@ function sendSkipWaiting(worker) {
     }
   });
 }
+
 
