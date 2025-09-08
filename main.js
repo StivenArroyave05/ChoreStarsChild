@@ -1484,16 +1484,28 @@ document.getElementById('children-list')?.addEventListener('click', e => {
   }
 });
 
-// ➕ Evento Añadir Tarea
+// ➕ Historial de tareas personalizadas por familia
+const customTaskLog = JSON.parse(localStorage.getItem('customTaskLog')) || {};
+
+function logCustomTask(name) {
+  const id = activeChildId;
+  if (!customTaskLog[id]) customTaskLog[id] = [];
+  if (!customTaskLog[id].includes(name)) {
+    customTaskLog[id].push(name);
+    localStorage.setItem('customTaskLog', JSON.stringify(customTaskLog));
+  }
+}
+
+// ➕ Evento “Añadir Tarea”
 document.getElementById('add-task')?.addEventListener('click', () => {
-  const lang      = localStorage.getItem('lang') || 'es';
-  const t         = translations[lang];
-  const nameInput = document.getElementById('new-task-name');
-  const ptsInput  = document.getElementById('new-task-points');
-  const freqSelect= document.getElementById('new-task-frequency');
-  const name      = nameInput.value.trim();
-  const points    = parseInt(ptsInput.value, 10);
-  const frequency = freqSelect.value; // "daily" o "weekly"
+  const lang       = localStorage.getItem('lang') || 'es';
+  const t          = translations[lang];
+  const nameInput  = document.getElementById('new-task-name');
+  const ptsInput   = document.getElementById('new-task-points');
+  const freqSelect = document.getElementById('new-task-frequency');
+  const name       = nameInput.value.trim();
+  const points     = parseInt(ptsInput.value, 10);
+  const frequency  = freqSelect.value; // "daily" o "weekly"
 
   if (!name || isNaN(points) || !activeChildId) {
     return alert(t.createTaskInstructions);
@@ -1502,7 +1514,7 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   tasks.push({
     name,
     points,
-    frequency,     // ← nuevo campo
+    frequency,
     done:      false,
     penalized: false,
     childId:   activeChildId
@@ -1513,49 +1525,107 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   updatePointDisplay();
   renderTaskSuggestions();
 
-  nameInput.value    = '';
-  ptsInput.value     = '';
-  freqSelect.value   = 'daily';
+  nameInput.value  = '';
+  ptsInput.value   = '';
+  freqSelect.value = 'daily';
 });
 
 // ➕ Catálogo de posibles sugerencias
 const taskSuggestions = [
-  { name: 'Revisar mochila',            dayOfWeek: 0 },         // domingo
-  { name: 'Empacar lonchera',           dayOfWeek: 1 },         // lunes
-  { name: 'Leer 10 páginas',            minAge: 7 },
-  { name: 'Ordenar escritorio',         minAge: 6 },
-  { name: 'Práctica de matemáticas',    weekdays: [1,2,3,4,5] },
-  { name: 'Tocar instrumento 15 min',   minAge: 8 },
-  { name: 'Repasar inglés',             minAge: 9 },
-  { name: 'Ayudar en la cocina',        maxAge: 5 },
-  { name: 'Regar plantas',              weekdays: [2,5] },
-  // … añade según tu contexto …
+  { name: 'Revisar bolso y verificar el horario de clases del día siguiente', dayOfWeek: 0 },
+  { name: 'Empacar lonchera',                        dayOfWeek: 1 },
+  { name: 'Tender la cama',                          minAge: 5 },
+  { name: 'Ayudar a servir el desayuno',             minAge: 6 },
+  { name: 'Regar las matas',                         weekdays: [2,5] },
+  { name: 'Sacar la basura',                         minAge: 7 },
+  { name: 'Limpiar los zapatos del colegio',         dayOfWeek: 6 },
+  { name: 'Organizar los útiles escolares',          dayOfWeek: 0 },
+  { name: 'Leer 10 páginas de un libro',             minAge: 7 },
+  { name: 'Practicar tablas de multiplicar',          minAge: 8 },
+  { name: 'Repasar inglés con Duolingo',             minAge: 9 },
+  { name: 'Ayudar a lavar la loza',                  minAge: 6 },
+  { name: 'Barrer el patio o balcón',                minAge: 7 },
+  { name: 'Limpiar el espejo del baño',              minAge: 6 },
+  { name: 'Doblar la ropa limpia',                   minAge: 8 },
+  { name: 'Organizar el clóset',                     minAge: 9 },
+  { name: 'Ayudar a cuidar al hermanito',            minAge: 10 },
+  { name: 'Llamar a los abuelos por videollamada',   dayOfWeek: 0 },
+  { name: 'Escribir una nota de agradecimiento',      minAge: 9 },
+  { name: 'Practicar instrumento musical',           minAge: 8 },
+  { name: 'Hacer una oración antes de dormir',       weekdays: [0,1,2,3,4,5,6] },
+  { name: 'Ayudar a preparar arepas',                minAge: 7 },
+  { name: 'Limpiar la mesa después de comer',        minAge: 5 },
+  { name: 'Hacer dibujo para decorar la nevera',     minAge: 4 },
+  { name: 'Revisar tareas en la agenda escolar',     weekdays: [1,2,3,4,5] },
+  { name: 'Organizar juguetes',                      minAge: 4 },
+  { name: 'Ayudar a alimentar la mascota',           minAge: 5 },
+  { name: 'Limpiar el comedero de la mascota',       minAge: 7 },
+  { name: 'Hacer ejercicio 15 minutos',              minAge: 8 },
+  { name: 'Ayudar a recoger hojas del jardín',       dayOfWeek: 6 },
+  { name: 'Revisar uniforme para el lunes',          dayOfWeek: 0 },
+  { name: 'Limpiar el escritorio',                   minAge: 6 },
+  { name: 'Preparar mochila para el colegio',        dayOfWeek: 0 },
+  { name: 'Ayudar a hacer mercado',                  dayOfWeek: 6 },
+  { name: 'Contar lo mejor del día a la familia',    weekdays: [0,1,2,3,4,5,6] },
+  { name: 'Hacer una manualidad con reciclaje',      minAge: 7 },
+  { name: 'Limpiar el vidrio del ventanal',          minAge: 9 },
+  { name: 'Revisar tareas en plataforma digital',    minAge: 10 },
+  { name: 'Hacer resumen de lectura escolar',        minAge: 10 },
+  { name: 'Ayudar a preparar jugo natural',          minAge: 6 },
+  { name: 'Limpiar el baño (solo lavamanos)',       minAge: 9 },
+  { name: 'Ayudar a organizar la despensa',          minAge: 8 },
+  { name: 'Revisar el horario escolar',              dayOfWeek: 0 },
+  { name: 'Hacer lista de útiles faltantes',         dayOfWeek: 6 },
+  { name: 'Ayudar a poner la mesa',                  minAge: 5 },
+  { name: 'Hacer una cartelera familiar',            minAge: 9 },
+  { name: 'Revisar tareas pendientes',               weekdays: [1,2,3,4,5] },
+  { name: 'Ayudar a limpiar el televisor',           minAge: 7 },
+  { name: 'Hacer un dibujo para regalar',            minAge: 8, weekdays: [1,3,5] },
+  { name: 'Ayudar a preparar chocolate caliente',    minAge: 6 }
 ];
 
+// ➕ Sugerencias basadas en el historial familiar
+function generateFamilyBasedSuggestions() {
+  const id        = activeChildId;
+  const history   = customTaskLog[id] || [];
+  const doneNames = tasks
+    .filter(t => t.childId === id)
+    .map(t => t.name);
+
+  return history.filter(name => !doneNames.includes(name));
+}
+
+// ➕ Genera sugerencias combinadas: catálogo + familia
 function generateTaskSuggestions() {
-  const child = children.find(c => c.id === activeChildId);
-  const age   = child?.age || 0;
-  const today = new Date().getDay(); // 0=domingo,1=lunes…
+  const child     = children.find(c => c.id === activeChildId);
+  const age       = child?.age ?? null;
+  const today     = new Date().getDay();
   const doneNames = tasks
     .filter(t => t.childId === activeChildId)
     .map(t => t.name);
 
-  return taskSuggestions.filter(s => {
-    // 1) Día de la semana
-    if (s.dayOfWeek != null && s.dayOfWeek !== today) return false;
-    if (s.weekdays && !s.weekdays.includes(today)) return false;
+  // 1) Base del catálogo con filtro compuesto
+  const base = taskSuggestions
+    .filter(s => {
+      if (doneNames.includes(s.name)) return false;
+      const ageOk =
+        (s.minAge == null || (age != null && age >= s.minAge)) &&
+        (s.maxAge == null || (age != null && age <= s.maxAge));
+      const dayOk =
+        (s.dayOfWeek == null || s.dayOfWeek === today) &&
+        (s.weekdays == null   || s.weekdays.includes(today));
+      return ageOk && dayOk;
+    })
+    .map(s => s.name);
 
-    // 2) Edad
-    if (s.minAge != null && age < s.minAge) return false;
-    if (s.maxAge != null && age > s.maxAge) return false;
+  // 2) Sugerencias del historial familiar
+  const family = generateFamilyBasedSuggestions();
 
-    // 3) No proponer tarea ya creada o hecha
-    if (doneNames.includes(s.name)) return false;
-
-    return true;
-  }).map(s => s.name);
+  // 3) Unión sin duplicados
+  return [...new Set([...base, ...family])];
 }
 
+// ➕ Renderiza los botones de sugerencia
 function renderTaskSuggestions() {
   const c = document.getElementById('task-suggestions');
   if (!c) return;
@@ -1571,11 +1641,12 @@ function renderTaskSuggestions() {
   });
 }
 
+// ➕ Añade una sugerencia como tarea y refresca vistas
 function addSuggestedTask(name) {
-  const lang     = localStorage.getItem('lang') || 'es';
-  const t        = translations[lang];
+  const lang       = localStorage.getItem('lang') || 'es';
+  const t          = translations[lang];
   const defaultPts = 10;
-  const defaultFreq = 'daily';
+  const defaultFreq= 'daily';
 
   tasks.push({
     name,
@@ -1586,13 +1657,13 @@ function addSuggestedTask(name) {
     childId:    activeChildId
   });
 
+  logCustomTask(name);        // ← registra la tarea en el historial familiar
   saveTasks();
   renderTasks();
   renderChildTasks();
   updatePointDisplay();
-  renderTaskSuggestions(); // refresca sugerencias
+  renderTaskSuggestions();
 }
-
 
 
 // — Editar / Eliminar tarea
