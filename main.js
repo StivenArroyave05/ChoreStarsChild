@@ -545,7 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedLang = localStorage.getItem('lang')     || 'es';
   const savedRole = localStorage.getItem('userRole') || 'child';
   applyTranslations(savedLang);
-  let userRole = savedRole;
 
   // — 3.2) Ejecutar renders que dependen de idioma o localStorage
   updateHeaderName();
@@ -559,39 +558,64 @@ document.addEventListener('DOMContentLoaded', () => {
   applyPendingDailyPenalties();
   applyPendingWeeklyPenalties();
 
-  // — 3.3) Bienvenida: ajustar selects y ocultarla si ya hay idioma y rol
-  const welcomeLang = document.getElementById('welcome-lang-select');
-  const welcomeRole = document.getElementById('welcome-role-select');
-  if (welcomeLang) welcomeLang.value = savedLang;
-  if (welcomeRole) welcomeRole.value = savedRole;
-  if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
-    document.getElementById('welcome-screen').style.display = 'none';
+  // — 3.3) Bienvenida: usar botones en lugar de selects
+  const welcomeScreen = document.getElementById('welcome-screen');
+  const langButtons   = Array.from(document.querySelectorAll('#welcome-lang-buttons button'));
+  const roleButtons   = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
+
+  // Variables para estado temporal
+  let welcomeLangValue = savedLang;
+  let welcomeRoleValue = savedRole;
+
+  // Función para resaltar el botón activo
+  function styleButtonGroup(buttons, activeValue) {
+    buttons.forEach(btn => {
+      const isActive = btn.dataset.value === activeValue;
+      btn.classList.toggle('bg-blue-600', isActive);
+      btn.classList.toggle('text-white',  isActive);
+      btn.classList.toggle('bg-gray-200', !isActive);
+      btn.classList.toggle('text-gray-700',!isActive);
+    });
   }
 
-  // — 3.4) Cambiar idioma en bienvenida en vivo
-  welcomeLang?.addEventListener('change', e => {
-    applyTranslations(e.target.value);
+  // Aplicar estilo inicial
+  styleButtonGroup(langButtons, welcomeLangValue);
+  styleButtonGroup(roleButtons, welcomeRoleValue);
+
+  // Ocultar bienvenida si ambos ya están configurados
+  if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
+    welcomeScreen.style.display = 'none';
+  }
+
+  // — 3.4) Click en botones de idioma
+  langButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      welcomeLangValue = btn.dataset.value;
+      styleButtonGroup(langButtons, welcomeLangValue);
+      applyTranslations(welcomeLangValue);
+    });
   });
 
-  // — 3.5) Cambiar rol en bienvenida en vivo
-  welcomeRole?.addEventListener('change', e => {
-    userRole = e.target.value;
+  // — 3.5) Click en botones de rol
+  roleButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      welcomeRoleValue = btn.dataset.value;
+      styleButtonGroup(roleButtons, welcomeRoleValue);
+    });
   });
 
   // — 3.6) Botón “Comenzar”: guarda idioma y rol, oculta bienvenida y refresca UI
   document.getElementById('welcome-start')?.addEventListener('click', () => {
-    const lang = welcomeLang.value;
-    const role = welcomeRole.value;
+    const lang = welcomeLangValue;
+    const role = welcomeRoleValue;
 
-    // Guarda ambos valores
-    localStorage.setItem('lang', lang);
+    localStorage.setItem('lang',     lang);
     localStorage.setItem('userRole', role);
-    userRole = role;
 
     applyTranslations(lang);
-    document.getElementById('welcome-screen').style.display = 'none';
+    welcomeScreen.style.display = 'none';
 
-    // Refrescar lógica dependiente de idioma y carga inicial
+    // refrescar lógica dependiente de idioma
     updateTodayHeader();
     renderCutoffTime();
     renderWeekStart();
@@ -600,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePointDisplay();
     updateFooterVersion();
 
-    // Cargue inicial de datos y sugerencias
+    // cargue inicial de datos y sugerencias
     renderChildrenList();
     renderTasks();
     renderChildTasks();

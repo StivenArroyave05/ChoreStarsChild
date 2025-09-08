@@ -13,12 +13,14 @@
 </head>
 
 <body class="bg-blue-50 min-h-screen flex flex-col font-sans">
-<!-- Pantalla de bienvenida (añade el selector de rol entre idioma y botón) -->
+
+<!-- Pantalla de bienvenida con botones en lugar de <select> -->
 <div id="welcome-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4">
   <img id="welcome-logo"
        src="assets/logo.png"
        alt="Chore Stars Logo"
-       class="h-12 w-auto mr-3" />
+       class="h-12 w-auto mb-4" />
+
   <h1 class="text-center text-3xl font-extrabold mb-4" data-i18n="welcomeTitle">
     Bienvenido a Chore Stars Child
   </h1>
@@ -26,24 +28,42 @@
     Organiza tareas y recompensas de forma divertida y segura.
   </p>
 
-  <div class="mb-6">
-    <label for="welcome-lang-select" class="mr-2" data-i18n="languageLabel">
-      Idioma:
-    </label>
-    <select id="welcome-lang-select" class="border rounded px-2 py-1">
-      <option value="es" data-i18n="langEs">Español</option>
-      <option value="en" data-i18n="langEn">English</option>
-    </select>
+  <!-- Botones de idioma -->
+  <div class="mb-6 text-center">
+    <span class="mr-2" data-i18n="languageLabel">Idioma:</span>
+    <div id="welcome-lang-buttons" class="inline-flex border rounded overflow-hidden">
+      <button type="button"
+              data-value="es"
+              class="px-4 py-2 text-sm font-medium"
+              data-i18n="langEs">
+        Español
+      </button>
+      <button type="button"
+              data-value="en"
+              class="px-4 py-2 text-sm font-medium"
+              data-i18n="langEn">
+        English
+      </button>
+    </div>
   </div>
 
-  <div class="mb-6">
-    <label for="welcome-role-select" class="mr-2" data-i18n="roleSelectionLabel">
-      Seleccionar rol:
-    </label>
-    <select id="welcome-role-select" class="border rounded px-2 py-1">
-      <option value="parent" data-i18n="parentRole">Padre</option>
-      <option value="child"  data-i18n="childRole">Niño</option>
-    </select>
+  <!-- Botones de rol -->
+  <div class="mb-6 text-center">
+    <span class="mr-2" data-i18n="roleSelectionLabel">Seleccionar rol:</span>
+    <div id="welcome-role-buttons" class="inline-flex border rounded overflow-hidden">
+      <button type="button"
+              data-value="parent"
+              class="px-4 py-2 text-sm font-medium"
+              data-i18n="parentRole">
+        Padre
+      </button>
+      <button type="button"
+              data-value="child"
+              class="px-4 py-2 text-sm font-medium"
+              data-i18n="childRole">
+        Niño
+      </button>
+    </div>
   </div>
 
   <button id="welcome-start" class="btn btn-primary px-6 py-2" data-i18n="startButton">
