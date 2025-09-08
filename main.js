@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.01";  // Actualízalo en cada release
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -117,6 +117,8 @@ const translations = {
     langEs:                 "Español",
     langEn:                 "English",
     suggestedTasksLabel:    "Tareas sugeridas",
+    toggleRoleBtn:          "Cambiar rol",
+    roleChangedMsg:         "Has seleccionado el rol “{role}”",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -232,6 +234,8 @@ const translations = {
     langEs:                 "Español",
     langEn:                 "English",
     suggestedTasksLabel:    "Suggested tasks",
+    toggleRoleBtn:          "Switch role",
+    roleChangedMsg:         "You have selected the “{role}” role",
   }
 };
 
@@ -645,6 +649,27 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFooterVersion();
   });
 });
+
+// Cambio de rol desde la interfaz o footer
+document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
+  // Alterna entre "parent" y "child"
+  const lang       = localStorage.getItem('lang')     || 'es';
+  const t          = translations[lang];
+  const current    = localStorage.getItem('userRole') || 'child';
+  const nextRole   = current === 'parent' ? 'child' : 'parent';
+
+  // Guarda el nuevo rol
+  localStorage.setItem('userRole', nextRole);
+
+  // Mensaje de confirmación con traducción dinámica
+  const roleName   = t[nextRole + 'Role'];
+  const msg        = t.roleChangedMsg.replace('{role}', roleName);
+  alert(msg);
+
+  // Refresca la sección de sugerencias (mostrándolas u ocultándolas)
+  renderTaskSuggestions();
+});
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // X. Migración de un solo childName a array de children
@@ -2074,5 +2099,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
