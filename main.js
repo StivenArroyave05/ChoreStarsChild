@@ -977,11 +977,19 @@ function renderTasks() {
       editBtn.className = 'btn-edit';
       editBtn.dataset.index = i;
       editBtn.textContent = '✏️';
+      if (tk.done) {
+        editBtn.disabled = true;
+        editBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn-danger';
       deleteBtn.dataset.index = i;
       deleteBtn.textContent = t.deleteTaskBtn;
+      if (tk.done) {
+        deleteBtn.disabled = true;
+        deleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      }
 
       actions.appendChild(editBtn);
       actions.appendChild(deleteBtn);
@@ -1057,6 +1065,7 @@ function renderChildTasks() {
       btn.disabled    = true;
       btn.classList.add('btn-done');
       updatePointDisplay();
+      renderTasks();
 
       const sparkle = document.createElement('div');
       sparkle.className   = 'sparkle';
