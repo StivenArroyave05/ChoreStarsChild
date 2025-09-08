@@ -110,6 +110,12 @@ const translations = {
     levelUpMsg:             "¡Felicidades! Has subido al nivel {level}",
     childAgePlaceholder:    "Edad",
     invalidChildNameOrAge:  "Por favor ingresa un nombre y edad válidos",
+    parentOnlyAction:       "Solo los padres pueden añadir tareas sugeridas",
+    roleSelectionLabel:     "Seleccionar rol:",
+    parentRole:             "Padre",
+    childRole:              "Niño",
+    langEs:                 "Español",
+    langEn:                 "English",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -218,6 +224,12 @@ const translations = {
     levelUpMsg:             "Congrats! You've reached level {level}",
     childAgePlaceholder:    "Age",
     invalidChildNameOrAge:  "Please enter a valid name and age",
+    parentOnlyAction:       "Only parents can add suggested tasks",
+    roleSelectionLabel:     "Select role:",
+    parentRole:             "Parent",
+    childRole:              "Child",
+    langEs:                 "Español",
+    langEn:                 "English",
   }
 };
 
@@ -342,11 +354,170 @@ function applyPendingWeeklyPenalties() {
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//  Sugerencias de tareas (catálogo + personalizado)
+////////////////////////////////////////////////////////////////////////////////
+
+// ➕ Historial de tareas personalizadas por familia
+const customTaskLog = JSON.parse(localStorage.getItem('customTaskLog')) || {};
+function logCustomTask(name) {
+  const id = activeChildId;
+  if (!customTaskLog[id]) customTaskLog[id] = [];
+  if (!customTaskLog[id].includes(name)) {
+    customTaskLog[id].push(name);
+    localStorage.setItem('customTaskLog', JSON.stringify(customTaskLog));
+  }
+}
+
+// ➕ Catálogo de posibles sugerencias (tu array de ~50 tareas)
+const taskSuggestions = [
+  { name: 'Revisar bolso y verificar el horario de clases del día siguiente', dayOfWeek: 0 },
+  { name: 'Empacar lonchera',                        dayOfWeek: 1 },
+  { name: 'Tender la cama',                          minAge: 5 },
+  { name: 'Ayudar a servir el desayuno',             minAge: 6 },
+  { name: 'Regar las matas',                         weekdays: [2,5] },
+  { name: 'Sacar la basura',                         minAge: 7 },
+  { name: 'Limpiar los zapatos del colegio',         dayOfWeek: 6 },
+  { name: 'Organizar los útiles escolares',          dayOfWeek: 0 },
+  { name: 'Leer 10 páginas de un libro',             minAge: 7 },
+  { name: 'Practicar tablas de multiplicar',          minAge: 8 },
+  { name: 'Repasar inglés con Duolingo',             minAge: 9 },
+  { name: 'Ayudar a lavar la loza',                  minAge: 6 },
+  { name: 'Barrer el patio o balcón',                minAge: 7 },
+  { name: 'Limpiar el espejo del baño',              minAge: 6 },
+  { name: 'Doblar la ropa limpia',                   minAge: 8 },
+  { name: 'Organizar el clóset',                     minAge: 9 },
+  { name: 'Ayudar a cuidar al hermanito',            minAge: 10 },
+  { name: 'Llamar a los abuelos por videollamada',   dayOfWeek: 0 },
+  { name: 'Escribir una nota de agradecimiento',      minAge: 9 },
+  { name: 'Practicar instrumento musical',           minAge: 8 },
+  { name: 'Hacer una oración antes de dormir',       weekdays: [0,1,2,3,4,5,6] },
+  { name: 'Ayudar a preparar arepas',                minAge: 7 },
+  { name: 'Limpiar la mesa después de comer',        minAge: 5 },
+  { name: 'Hacer dibujo para decorar la nevera',     minAge: 4 },
+  { name: 'Revisar tareas en la agenda escolar',     weekdays: [1,2,3,4,5] },
+  { name: 'Organizar juguetes',                      minAge: 4 },
+  { name: 'Ayudar a alimentar la mascota',           minAge: 5 },
+  { name: 'Limpiar el comedero de la mascota',       minAge: 7 },
+  { name: 'Hacer ejercicio 15 minutos',              minAge: 8 },
+  { name: 'Ayudar a recoger hojas del jardín',       dayOfWeek: 6 },
+  { name: 'Revisar uniforme para el lunes',          dayOfWeek: 0 },
+  { name: 'Limpiar el escritorio',                   minAge: 6 },
+  { name: 'Preparar mochila para el colegio',        dayOfWeek: 0 },
+  { name: 'Ayudar a hacer mercado',                  dayOfWeek: 6 },
+  { name: 'Contar lo mejor del día a la familia',    weekdays: [0,1,2,3,4,5,6] },
+  { name: 'Hacer una manualidad con reciclaje',      minAge: 7 },
+  { name: 'Limpiar el vidrio del ventanal',          minAge: 9 },
+  { name: 'Revisar tareas en plataforma digital',    minAge: 10 },
+  { name: 'Hacer resumen de lectura escolar',        minAge: 10 },
+  { name: 'Ayudar a preparar jugo natural',          minAge: 6 },
+  { name: 'Limpiar el baño (solo lavamanos)',        minAge: 9 },
+  { name: 'Ayudar a organizar la despensa',          minAge: 8 },
+  { name: 'Revisar el horario escolar',              dayOfWeek: 0 },
+  { name: 'Hacer lista de útiles faltantes',         dayOfWeek: 6 },
+  { name: 'Ayudar a poner la mesa',                  minAge: 5 },
+  { name: 'Hacer una cartelera familiar',            minAge: 9 },
+  { name: 'Revisar tareas pendientes',               weekdays: [1,2,3,4,5] },
+  { name: 'Ayudar a limpiar el televisor',           minAge: 7 },
+  { name: 'Hacer un dibujo para regalar',            minAge: 8, weekdays: [1,3,5] },
+  { name: 'Ayudar a preparar chocolate caliente',    minAge: 6 }
+];
+
+// ➕ Filtra catálogo por edad, día y no repetidas
+function generateCatalogSuggestions() {
+  const child     = children.find(c => c.id === activeChildId);
+  const age       = child?.age ?? null;
+  const today     = new Date().getDay();
+  const doneNames = tasks
+    .filter(t => t.childId === activeChildId)
+    .map(t => t.name);
+
+  return taskSuggestions
+    .filter(s => {
+      if (doneNames.includes(s.name)) return false;
+      const ageOk =
+        (s.minAge == null || (age != null && age >= s.minAge)) &&
+        (s.maxAge == null || (age != null && age <= s.maxAge));
+      const dayOk =
+        (s.dayOfWeek == null || s.dayOfWeek === today) &&
+        (s.weekdays == null   || s.weekdays.includes(today));
+      return ageOk && dayOk;
+    })
+    .map(s => s.name);
+}
+
+// ➕ Sugerencias basadas en historial familiar
+function generateFamilyBasedSuggestions() {
+  const id        = activeChildId;
+  const history   = customTaskLog[id] || [];
+  const doneNames = tasks
+    .filter(t => t.childId === id)
+    .map(t => t.name);
+  return history.filter(name => !doneNames.includes(name));
+}
+
+// ➕ Combina catálogo + familia sin duplicados
+function generateTaskSuggestions() {
+  const base   = generateCatalogSuggestions();
+  const family = generateFamilyBasedSuggestions();
+  return [...new Set([...base, ...family])];
+}
+
+// ➕ Renderiza los botones de sugerencia
+function renderTaskSuggestions() {
+  const c = document.getElementById('task-suggestions');
+  if (!c) return;
+  c.innerHTML = '';
+
+  generateTaskSuggestions().forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-btn';
+    btn.textContent = name;
+    btn.addEventListener('click', () => addSuggestedTask(name));
+    c.appendChild(btn);
+  });
+}
+
+// ➕ Añade una sugerencia como tarea y refresca vistas
+function addSuggestedTask(name) {
+  const lang      = localStorage.getItem('lang')     || 'es';
+  const t         = translations[lang];
+  const userRole  = localStorage.getItem('userRole') || 'child';
+
+  // Solo el padre puede añadir sugerencias
+  if (userRole !== 'parent') {
+    alert(t.parentOnlyAction);
+    return;
+  }
+
+  const defaultPts  = 10;
+  const defaultFreq = 'daily';
+
+  tasks.push({
+    name,
+    points:     defaultPts,
+    frequency:  defaultFreq,
+    done:       false,
+    penalized:  false,
+    childId:    activeChildId
+  });
+
+  logCustomTask(name);
+  saveTasks();
+  renderTasks();
+  renderChildTasks();
+  updatePointDisplay();
+  renderTaskSuggestions();
+}
+
+
 // 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
-  // — 3.1) Idioma guardado o por defecto
-  const saved = localStorage.getItem('lang') || 'es';
-  applyTranslations(saved);
+  // — 3.1) Idioma y rol guardados o por defecto
+  const savedLang = localStorage.getItem('lang')     || 'es';
+  const savedRole = localStorage.getItem('userRole') || 'child';
+  applyTranslations(savedLang);
+  let userRole = savedRole;
 
   // — 3.2) Ejecutar renders que dependen de idioma o localStorage
   updateHeaderName();
@@ -360,26 +531,39 @@ document.addEventListener('DOMContentLoaded', () => {
   applyPendingDailyPenalties();
   applyPendingWeeklyPenalties();
 
-  // — 3.3) Bienvenida: ajustar select y ocultarla si ya hay idioma
-  const welcomeSelect = document.getElementById('welcome-lang-select');
-  if (welcomeSelect) welcomeSelect.value = saved;
-  if (localStorage.getItem('lang')) {
+  // — 3.3) Bienvenida: ajustar selects y ocultarla si ya hay idioma y rol
+  const welcomeLang = document.getElementById('welcome-lang-select');
+  const welcomeRole = document.getElementById('welcome-role-select');
+  if (welcomeLang) welcomeLang.value = savedLang;
+  if (welcomeRole) welcomeRole.value = savedRole;
+  if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
     document.getElementById('welcome-screen').style.display = 'none';
   }
 
   // — 3.4) Cambiar idioma en bienvenida en vivo
-  welcomeSelect?.addEventListener('change', e => {
+  welcomeLang?.addEventListener('change', e => {
     applyTranslations(e.target.value);
   });
 
-  // — 3.5) Botón “Comenzar”
+  // — 3.5) Cambiar rol en bienvenida en vivo
+  welcomeRole?.addEventListener('change', e => {
+    userRole = e.target.value;
+  });
+
+  // — 3.6) Botón “Comenzar”: guarda idioma y rol, oculta bienvenida y refresca UI
   document.getElementById('welcome-start')?.addEventListener('click', () => {
-    const lang = welcomeSelect.value;
+    const lang = welcomeLang.value;
+    const role = welcomeRole.value;
+
+    // Guarda ambos valores
     localStorage.setItem('lang', lang);
+    localStorage.setItem('userRole', role);
+    userRole = role;
+
     applyTranslations(lang);
     document.getElementById('welcome-screen').style.display = 'none';
 
-    // refrescar lógica dependiente de idioma
+    // Refrescar lógica dependiente de idioma y carga inicial
     updateTodayHeader();
     renderCutoffTime();
     renderWeekStart();
@@ -387,9 +571,15 @@ document.addEventListener('DOMContentLoaded', () => {
     renderBadges();
     updatePointDisplay();
     updateFooterVersion();
+
+    // Cargue inicial de datos y sugerencias
+    renderChildrenList();
+    renderTasks();
+    renderChildTasks();
+    renderTaskSuggestions();
   });
 
-  // — 3.6) Selector permanente de idioma
+  // — 3.7) Selector permanente de idioma (ya existente)
   document.getElementById('language-select')?.addEventListener('change', e => {
     const lang = e.target.value;
     localStorage.setItem('lang', lang);
@@ -402,10 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePointDisplay();
     updateFooterVersion();
   });
-
-  // — aquí va el resto de tu inicialización existente —
 });
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // X. Migración de un solo childName a array de children
@@ -1484,18 +1671,6 @@ document.getElementById('children-list')?.addEventListener('click', e => {
   }
 });
 
-// ➕ Historial de tareas personalizadas por familia
-const customTaskLog = JSON.parse(localStorage.getItem('customTaskLog')) || {};
-
-function logCustomTask(name) {
-  const id = activeChildId;
-  if (!customTaskLog[id]) customTaskLog[id] = [];
-  if (!customTaskLog[id].includes(name)) {
-    customTaskLog[id].push(name);
-    localStorage.setItem('customTaskLog', JSON.stringify(customTaskLog));
-  }
-}
-
 // ➕ Evento “Añadir Tarea”
 document.getElementById('add-task')?.addEventListener('click', () => {
   const lang       = localStorage.getItem('lang') || 'es';
@@ -1529,142 +1704,6 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   ptsInput.value   = '';
   freqSelect.value = 'daily';
 });
-
-// ➕ Catálogo de posibles sugerencias
-const taskSuggestions = [
-  { name: 'Revisar bolso y verificar el horario de clases del día siguiente', dayOfWeek: 0 },
-  { name: 'Empacar lonchera',                        dayOfWeek: 1 },
-  { name: 'Tender la cama',                          minAge: 5 },
-  { name: 'Ayudar a servir el desayuno',             minAge: 6 },
-  { name: 'Regar las matas',                         weekdays: [2,5] },
-  { name: 'Sacar la basura',                         minAge: 7 },
-  { name: 'Limpiar los zapatos del colegio',         dayOfWeek: 6 },
-  { name: 'Organizar los útiles escolares',          dayOfWeek: 0 },
-  { name: 'Leer 10 páginas de un libro',             minAge: 7 },
-  { name: 'Practicar tablas de multiplicar',          minAge: 8 },
-  { name: 'Repasar inglés con Duolingo',             minAge: 9 },
-  { name: 'Ayudar a lavar la loza',                  minAge: 6 },
-  { name: 'Barrer el patio o balcón',                minAge: 7 },
-  { name: 'Limpiar el espejo del baño',              minAge: 6 },
-  { name: 'Doblar la ropa limpia',                   minAge: 8 },
-  { name: 'Organizar el clóset',                     minAge: 9 },
-  { name: 'Ayudar a cuidar al hermanito',            minAge: 10 },
-  { name: 'Llamar a los abuelos por videollamada',   dayOfWeek: 0 },
-  { name: 'Escribir una nota de agradecimiento',      minAge: 9 },
-  { name: 'Practicar instrumento musical',           minAge: 8 },
-  { name: 'Hacer una oración antes de dormir',       weekdays: [0,1,2,3,4,5,6] },
-  { name: 'Ayudar a preparar arepas',                minAge: 7 },
-  { name: 'Limpiar la mesa después de comer',        minAge: 5 },
-  { name: 'Hacer dibujo para decorar la nevera',     minAge: 4 },
-  { name: 'Revisar tareas en la agenda escolar',     weekdays: [1,2,3,4,5] },
-  { name: 'Organizar juguetes',                      minAge: 4 },
-  { name: 'Ayudar a alimentar la mascota',           minAge: 5 },
-  { name: 'Limpiar el comedero de la mascota',       minAge: 7 },
-  { name: 'Hacer ejercicio 15 minutos',              minAge: 8 },
-  { name: 'Ayudar a recoger hojas del jardín',       dayOfWeek: 6 },
-  { name: 'Revisar uniforme para el lunes',          dayOfWeek: 0 },
-  { name: 'Limpiar el escritorio',                   minAge: 6 },
-  { name: 'Preparar mochila para el colegio',        dayOfWeek: 0 },
-  { name: 'Ayudar a hacer mercado',                  dayOfWeek: 6 },
-  { name: 'Contar lo mejor del día a la familia',    weekdays: [0,1,2,3,4,5,6] },
-  { name: 'Hacer una manualidad con reciclaje',      minAge: 7 },
-  { name: 'Limpiar el vidrio del ventanal',          minAge: 9 },
-  { name: 'Revisar tareas en plataforma digital',    minAge: 10 },
-  { name: 'Hacer resumen de lectura escolar',        minAge: 10 },
-  { name: 'Ayudar a preparar jugo natural',          minAge: 6 },
-  { name: 'Limpiar el baño (solo lavamanos)',       minAge: 9 },
-  { name: 'Ayudar a organizar la despensa',          minAge: 8 },
-  { name: 'Revisar el horario escolar',              dayOfWeek: 0 },
-  { name: 'Hacer lista de útiles faltantes',         dayOfWeek: 6 },
-  { name: 'Ayudar a poner la mesa',                  minAge: 5 },
-  { name: 'Hacer una cartelera familiar',            minAge: 9 },
-  { name: 'Revisar tareas pendientes',               weekdays: [1,2,3,4,5] },
-  { name: 'Ayudar a limpiar el televisor',           minAge: 7 },
-  { name: 'Hacer un dibujo para regalar',            minAge: 8, weekdays: [1,3,5] },
-  { name: 'Ayudar a preparar chocolate caliente',    minAge: 6 }
-];
-
-// ➕ Sugerencias basadas en el historial familiar
-function generateFamilyBasedSuggestions() {
-  const id        = activeChildId;
-  const history   = customTaskLog[id] || [];
-  const doneNames = tasks
-    .filter(t => t.childId === id)
-    .map(t => t.name);
-
-  return history.filter(name => !doneNames.includes(name));
-}
-
-// ➕ Genera sugerencias combinadas: catálogo + familia
-function generateTaskSuggestions() {
-  const child     = children.find(c => c.id === activeChildId);
-  const age       = child?.age ?? null;
-  const today     = new Date().getDay();
-  const doneNames = tasks
-    .filter(t => t.childId === activeChildId)
-    .map(t => t.name);
-
-  // 1) Base del catálogo con filtro compuesto
-  const base = taskSuggestions
-    .filter(s => {
-      if (doneNames.includes(s.name)) return false;
-      const ageOk =
-        (s.minAge == null || (age != null && age >= s.minAge)) &&
-        (s.maxAge == null || (age != null && age <= s.maxAge));
-      const dayOk =
-        (s.dayOfWeek == null || s.dayOfWeek === today) &&
-        (s.weekdays == null   || s.weekdays.includes(today));
-      return ageOk && dayOk;
-    })
-    .map(s => s.name);
-
-  // 2) Sugerencias del historial familiar
-  const family = generateFamilyBasedSuggestions();
-
-  // 3) Unión sin duplicados
-  return [...new Set([...base, ...family])];
-}
-
-// ➕ Renderiza los botones de sugerencia
-function renderTaskSuggestions() {
-  const c = document.getElementById('task-suggestions');
-  if (!c) return;
-  c.innerHTML = '';
-
-  const suggestions = generateTaskSuggestions();
-  suggestions.forEach(name => {
-    const btn = document.createElement('button');
-    btn.className = 'suggestion-btn';
-    btn.textContent = name;
-    btn.addEventListener('click', () => addSuggestedTask(name));
-    c.appendChild(btn);
-  });
-}
-
-// ➕ Añade una sugerencia como tarea y refresca vistas
-function addSuggestedTask(name) {
-  const lang       = localStorage.getItem('lang') || 'es';
-  const t          = translations[lang];
-  const defaultPts = 10;
-  const defaultFreq= 'daily';
-
-  tasks.push({
-    name,
-    points:     defaultPts,
-    frequency:  defaultFreq,
-    done:       false,
-    penalized:  false,
-    childId:    activeChildId
-  });
-
-  logCustomTask(name);        // ← registra la tarea en el historial familiar
-  saveTasks();
-  renderTasks();
-  renderChildTasks();
-  updatePointDisplay();
-  renderTaskSuggestions();
-}
-
 
 // — Editar / Eliminar tarea
 document.getElementById('tasks-manage')?.addEventListener('click', e => {
