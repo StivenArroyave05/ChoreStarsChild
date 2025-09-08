@@ -119,6 +119,8 @@ const translations = {
     suggestedTasksLabel:    "Tareas sugeridas",
     toggleRoleBtn:          "Cambiar rol",
     roleChangedMsg:         "Has seleccionado el rol “{role}”",
+    pinCreatePrompt: 	    "🔐 Crea un PIN para proteger la configuración:",
+    pinCreatedMsg:  	    "✅ PIN guardado correctamente.",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -236,6 +238,8 @@ const translations = {
     suggestedTasksLabel:    "Suggested tasks",
     toggleRoleBtn:          "Switch role",
     roleChangedMsg:         "You have selected the “{role}” role",
+    pinCreatePrompt: 	    "🔐 Create a PIN to protect settings:",
+    pinCreatedMsg:   	    "✅ PIN saved successfully.",
   }
 };
 
@@ -274,6 +278,7 @@ function getCurrentWeekStartKey() {
   const monday = getWeekStart(new Date()); // ya tienes getWeekStart()
   return monday.toISOString().split('T')[0];
 }
+
 
 // ──────────────
 // 1) Penalizaciones diarias “pendientes”
@@ -543,6 +548,21 @@ function addSuggestedTask(name) {
   renderTaskSuggestions();
 }
 
+
+  // 🔐 Navegación con PIN
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.tab === 'settings' && localStorage.getItem('pin')) {
+        const entered = prompt('🔐 Ingresa PIN:');
+        if (entered !== localStorage.getItem('pin')) {
+          return alert('❌ PIN incorrecto');
+        }
+      }
+      showTab(btn.dataset.tab);
+    });
+  });
+
+
 // 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
   // — 3.1) Idioma y rol guardados o por defecto
@@ -586,7 +606,7 @@ document.addEventListener('DOMContentLoaded', () => {
   styleButtonGroup(langButtons, welcomeLangValue);
   styleButtonGroup(roleButtons, welcomeRoleValue);
 
-  // Ocultar bienvenida si ambos ya están configurados
+  // Ocultar bienvenida si ya hay configuración
   if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
     welcomeScreen.style.display = 'none';
   }
@@ -608,18 +628,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // — 3.6) Botón “Comenzar”: guarda idioma y rol, oculta bienvenida y refresca UI
+  // — 3.6) Botón “Comenzar”: guarda idioma y rol, pide PIN si es padre, abre Configuración y carga UI
   document.getElementById('welcome-start')?.addEventListener('click', () => {
     const lang = welcomeLangValue;
     const role = welcomeRoleValue;
 
+    // Persistir idioma y rol
     localStorage.setItem('lang',     lang);
     localStorage.setItem('userRole', role);
+
+    // Si es padre y no existe PIN, crearlo con texto traducido y navegar a Configuración
+    if (role === 'parent') {
+      const lang = localStorage.getItem('lang') || 'es';
+      const t    = translations[lang];
+
+      if (!localStorage.getItem('pin')) {
+        let newPin = '';
+        while (!newPin) {
+          // usa la clave traducida pinCreatePrompt
+          newPin = prompt(t.pinCreatePrompt).trim();
+        }
+        localStorage.setItem('pin', newPin);
+        // opcional: confirma al padre que quedó guardado
+        alert(t.pinCreatedMsg);
+      }
+      showTab('settings');
+    }
+
 
     applyTranslations(lang);
     welcomeScreen.style.display = 'none';
 
-    // refrescar lógica dependiente de idioma
+    // Refrescar toda la UI dependiente
     updateTodayHeader();
     renderCutoffTime();
     renderWeekStart();
@@ -628,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePointDisplay();
     updateFooterVersion();
 
-    // cargue inicial de datos y sugerencias
+    // Cargue inicial de datos y sugerencias
     renderChildrenList();
     renderTasks();
     renderChildTasks();
@@ -1967,20 +2007,6 @@ document.getElementById('reset-app')?.addEventListener('click', () => {
   location.reload();
 });
 
-
-
-  // 🔐 Navegación con PIN
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.tab === 'settings' && localStorage.getItem('pin')) {
-        const entered = prompt('🔐 Ingresa PIN:');
-        if (entered !== localStorage.getItem('pin')) {
-          return alert('❌ PIN incorrecto');
-        }
-      }
-      showTab(btn.dataset.tab);
-    });
-  });
 
   // 👤 Guardar nombre del niño
   function initChildName() {
