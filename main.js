@@ -116,6 +116,7 @@ const translations = {
     childRole:              "Niño",
     langEs:                 "Español",
     langEn:                 "English",
+    suggestedTasksLabel:    "Tareas sugeridas",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -230,6 +231,7 @@ const translations = {
     childRole:              "Child",
     langEs:                 "Español",
     langEn:                 "English",
+    suggestedTasksLabel:    "Suggested tasks",
   }
 };
 
@@ -463,18 +465,45 @@ function generateTaskSuggestions() {
   return [...new Set([...base, ...family])];
 }
 
-// ➕ Renderiza los botones de sugerencia
+// ➕ Renderiza los botones de sugerencia (solo para padres),
+//    con título “Tareas sugeridas” y estilo más pequeño y moderno
 function renderTaskSuggestions() {
-  const c = document.getElementById('task-suggestions');
-  if (!c) return;
-  c.innerHTML = '';
+  const container = document.getElementById('task-suggestions');
+  if (!container) return;
 
-  generateTaskSuggestions().forEach(name => {
+  // Solo padres ven esta sección
+  const userRole = localStorage.getItem('userRole') || 'child';
+  if (userRole !== 'parent') {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+
+  // Obtener traducciones y sugerencias
+  const lang = localStorage.getItem('lang') || 'es';
+  const t    = translations[lang];
+  const suggestions = generateTaskSuggestions();
+
+  // Si no hay sugerencias, lo limpiamos y salimos
+  if (suggestions.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  // Limpiar previo y añadir título
+  container.innerHTML = '';
+  const title = document.createElement('div');
+  title.textContent = t.suggestedTasksLabel;
+  title.className = 'text-sm font-medium text-gray-600 mb-2';
+  container.appendChild(title);
+
+  // Botones de sugerencia
+  suggestions.forEach(name => {
     const btn = document.createElement('button');
-    btn.className = 'suggestion-btn';
+    btn.className = 'suggestion-btn text-sm px-2 py-1 mr-2 mb-2';
     btn.textContent = name;
     btn.addEventListener('click', () => addSuggestedTask(name));
-    c.appendChild(btn);
+    container.appendChild(btn);
   });
 }
 
@@ -509,7 +538,6 @@ function addSuggestedTask(name) {
   updatePointDisplay();
   renderTaskSuggestions();
 }
-
 
 // 3) Inicialización única
 document.addEventListener('DOMContentLoaded', () => {
