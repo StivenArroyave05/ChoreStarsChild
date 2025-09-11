@@ -123,6 +123,8 @@ const translations = {
     pinCreatePrompt: 	    "🔐 Crea un PIN para proteger la configuración:",
     pinCreatedMsg:  	    "✅ PIN guardado correctamente.",
     afterCutoffBlockMsg:    '❌ No puedes crear tareas después de la hora límite.',
+    pinPrompt:              "🔐 Ingresa PIN:",
+    pinIncorrectMsg:        "❌ PIN incorrecto",
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -244,6 +246,8 @@ const translations = {
     pinCreatePrompt: 	    "🔐 Create a PIN to protect settings:",
     pinCreatedMsg:   	    "✅ PIN saved successfully.",
     afterCutoffBlockMsg:    "❌ You can't create tasks after the cutoff time.",
+    pinPrompt:              "🔐 Enter PIN:",
+    pinIncorrectMsg:        "❌ Incorrect PIN",
   }
 };
 
@@ -542,18 +546,21 @@ function addSuggestedTask(name) {
 }
 
 
-  // 🔐 Navegación con PIN
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.tab === 'settings' && localStorage.getItem('pin')) {
-        const entered = prompt('🔐 Ingresa PIN:');
-        if (entered !== localStorage.getItem('pin')) {
-          return alert('❌ PIN incorrecto');
-        }
+// 🔐 Navegación con PIN (usando traducciones)
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'settings' && localStorage.getItem('pin')) {
+      const lang = localStorage.getItem('lang') || 'es';
+      const t    = translations[lang];
+
+      const entered = prompt(t.pinPrompt);
+      if (entered !== localStorage.getItem('pin')) {
+        return alert(t.pinIncorrectMsg);
       }
-      showTab(btn.dataset.tab);
-    });
+    }
+    showTab(btn.dataset.tab);
   });
+});
 
 
 ////////////////////////////////////////////////////////////////////////////////
