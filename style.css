@@ -361,6 +361,10 @@ button {
   background: #059669;   /* emerald-600 */
 }
 
+.bg-starGreen {
+  background-color: #34d399; /* verde suave similar a Tailwind emerald-300 */
+}
+
 /* ────────────────────────────────────────────────────────────
    Responsive: evitar overflow en móviles muy angostos
 ──────────────────────────────────────────────────────────────── */

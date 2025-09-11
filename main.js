@@ -1,5 +1,5 @@
 // main.js
-const APP_VERSION = "1.0.01";  // Actualízalo en cada release
+const APP_VERSION = "1.0.2";  // Actualízalo en cada release
 
 // 1) Traducciones
 const translations = {
@@ -983,12 +983,32 @@ function renderBadges() {
 ////////////////////////////////////////////////////////////////////////////////
 // 4. Barra de progreso, puntos y sistema de niveles o rangos.
 ////////////////////////////////////////////////////////////////////////////////
+// — 1) Ajusta el cálculo para que la barra muestre el progreso relativo
+//      dentro del nivel actual hacia el siguiente nivel
 function updateProgressBar() {
+  const bar = document.getElementById('progress-bar');
+  if (!bar) return;
+
+  // Puntos netos del niño activo
   const stats = getStatsFor(activeChildId);
-  const total = stats.earned - stats.lost;
-  const pct   = Math.min((total / 100) * 100, 100);
-  const bar   = document.getElementById('progress-bar');
-  if (bar) bar.style.width = `${pct}%`;
+  const total = stats.earned + badges.reduce((s, b) => s + b.bonus, 0)
+              - stats.lost - stats.redeemed;
+
+  // Nivel actual y siguiente umbral
+  const { current, next } = getCurrentLevel(total);
+
+  // Si no hay siguiente nivel, dejamos la barra al 100%
+  if (!next) {
+    bar.style.width = '100%';
+    return;
+  }
+
+  // Progreso dentro del rango actual → siguiente nivel
+  const span      = next.min - current.min;
+  const progress  = total - current.min;
+  // clamped al 0–100%
+  const pct       = Math.max(0, Math.min((progress / span) * 100, 100));
+  bar.style.width = `${pct}%`;
 }
 
 // 1) Define los umbrales de nivel justo después de tu objeto `translations`
@@ -2190,5 +2210,4 @@ function sendSkipWaiting(worker) {
     }
   });
 }
-
 
