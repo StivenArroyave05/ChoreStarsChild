@@ -110,7 +110,8 @@ const translations = {
     levelUpMsg:             "¡Felicidades! Has subido al nivel {level}",
     childAgePlaceholder:    "Edad",
     invalidChildNameOrAge:  "Por favor ingresa un nombre y edad válidos",
-    parentOnlyAction:       "Solo los padres pueden añadir tareas sugeridas",
+    parentOnlyActionT:      "Solo los padres pueden agregar tareas sugeridas",
+    parentOnlyAction:       "Solo los niños canjear las recompensas disponibles",
     roleSelectionLabel:     "Seleccionar rol:",
     parentRole:             "Padre",
     childRole:              "Niño",
@@ -121,6 +122,7 @@ const translations = {
     roleChangedMsg:         "Has seleccionado el rol “{role}”",
     pinCreatePrompt: 	    "🔐 Crea un PIN para proteger la configuración:",
     pinCreatedMsg:  	    "✅ PIN guardado correctamente.",
+    afterCutoffBlockMsg:    '❌ No puedes crear tareas después de la hora límite.',
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -229,7 +231,8 @@ const translations = {
     levelUpMsg:             "Congrats! You've reached level {level}",
     childAgePlaceholder:    "Age",
     invalidChildNameOrAge:  "Please enter a valid name and age",
-    parentOnlyAction:       "Only parents can add suggested tasks",
+    parentOnlyActionT:      "Only parents can add suggested tasks",
+    parentOnlyAction:       "Only children redeem the available rewards",
     roleSelectionLabel:     "Select role:",
     parentRole:             "Parent",
     childRole:              "Child",
@@ -240,6 +243,7 @@ const translations = {
     roleChangedMsg:         "You have selected the “{role}” role",
     pinCreatePrompt: 	    "🔐 Create a PIN to protect settings:",
     pinCreatedMsg:   	    "✅ PIN saved successfully.",
+    afterCutoffBlockMsg:    "❌ You can't create tasks after the cutoff time.",
   }
 };
 
@@ -284,41 +288,38 @@ function getCurrentWeekStartKey() {
 // 1) Penalizaciones diarias “pendientes”
 // ──────────────
 function applyPendingDailyPenalties() {
-  const lang     = localStorage.getItem('lang') || 'es';
-  const t        = translations[lang];
-  const todayKey = getTodayKey();
-  const lastKey  = localStorage.getItem('lastDailyPenalty') || '';
+  const lang      = localStorage.getItem('lang') || 'es';
+  const t         = translations[lang];
+  const todayKey  = getTodayKey();
+  const lastKey   = localStorage.getItem('lastDailyPenalty');
 
-  // Fecha límite de hoy (p.ej. "21:00")
-  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
-  const [h, m]   = cutoff.split(':').map(Number);
-  const cutoffDt = new Date();
-  cutoffDt.setHours(h, m, 0, 0);
+  // No hacer nada antes del cutoff o si ya penalizamos hoy
+  const cutoff    = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m]    = cutoff.split(':').map(Number);
+  const cutoffDt  = new Date(); cutoffDt.setHours(h, m, 0, 0);
+  if (new Date() <= cutoffDt || lastKey === todayKey) return;
 
-  // Si ya pasó el cutoff y aún no penalizamos hoy, aplicamos
-  if (new Date() > cutoffDt && todayKey !== lastKey) {
-    let anyChange = false;
-
-    tasks.forEach(task => {
-      if (task.frequency === 'daily' && !task.done && !task.penalized) {
-        const stats = getStatsFor(task.childId);
-        stats.lost     += task.points * 2;  // ×2
-        task.penalized  = true;
-        anyChange       = true;
-      }
-    });
-
-    if (anyChange) {
-      saveStatsMap();
-      saveTasks();
-      updatePointDisplay();
-      flashMessage(t.penDailyMsg);
+  let anyChange = false;
+  tasks.forEach(task => {
+    if (task.frequency === 'daily' && !task.done && !task.penalized) {
+      const stats      = getStatsFor(task.childId);
+      stats.lost       += task.points * 2;  // doble penalización
+      task.penalized   = true;
+      anyChange        = true;
     }
+  });
 
-    // Marcamos que ya penalizamos hoy
-    localStorage.setItem('lastDailyPenalty', todayKey);
+  if (anyChange) {
+    saveStatsMap();
+    saveTasks();
+    updatePointDisplay();
+    flashMessage(t.penDailyMsg);
   }
+
+  // Marcar que hoy ya aplicamos la penalización
+  localStorage.setItem('lastDailyPenalty', todayKey);
 }
+
 
 // ──────────────
 // 2) Penalizaciones semanales “pendientes”
@@ -327,43 +328,39 @@ function applyPendingWeeklyPenalties() {
   const lang        = localStorage.getItem('lang') || 'es';
   const t           = translations[lang];
   const weekKey     = getCurrentWeekStartKey();
-  const lastWeekKey = localStorage.getItem('lastWeeklyPenalty') || '';
+  const lastWeekKey = localStorage.getItem('lastWeeklyPenalty');
 
-  // Calcula el domingo de esta semana + hora cutoff
-  const cutoff   = localStorage.getItem('cutoffTime') || '21:00';
-  const [h, m]   = cutoff.split(':').map(Number);
-  const sunday   = new Date(getWeekStart(new Date()));
-  sunday.setDate(sunday.getDate() + 6);
-  sunday.setHours(h, m, 0, 0);
+  // Calcular fin de semana: domingo + hora cutoff
+  const cutoff    = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m]    = cutoff.split(':').map(Number);
+  const weekEnd   = new Date(getWeekStart(new Date()));
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(h, m, 0, 0);
 
-  // Si ya pasó domingo+corte y aún no penalizamos esta semana
-  if (new Date() > sunday && weekKey !== lastWeekKey) {
-    let anyChange = false;
+  // No hacer nada antes de domingo+corte o si ya penalizamos esta semana
+  if (new Date() <= weekEnd || lastWeekKey === weekKey) return;
 
-    tasks.forEach(task => {
-      if (
-        task.frequency === 'weekly' &&
-        !task.done &&
-        !task.penalized
-      ) {
-        const stats = getStatsFor(task.childId);
-        stats.lost     += task.points * 3;  // ×3
-        task.penalized  = true;
-        anyChange       = true;
-      }
-    });
-
-    if (anyChange) {
-      saveStatsMap();
-      saveTasks();
-      updatePointDisplay();
-      flashMessage(t.penWeeklyMsg);
+  let anyChange = false;
+  tasks.forEach(task => {
+    if (task.frequency === 'weekly' && !task.done && !task.penalized) {
+      const stats    = getStatsFor(task.childId);
+      stats.lost     += task.points * 3;  // triple penalización
+      task.penalized = true;
+      anyChange      = true;
     }
+  });
 
-    // Marcamos que ya penalizamos esta semana
-    localStorage.setItem('lastWeeklyPenalty', weekKey);
+  if (anyChange) {
+    saveStatsMap();
+    saveTasks();
+    updatePointDisplay();
+    flashMessage(t.penWeeklyMsg);
   }
+
+  // Marcar que ya aplicamos la penalización semanal
+  localStorage.setItem('lastWeeklyPenalty', weekKey);
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //  Sugerencias de tareas (catálogo + personalizado)
@@ -518,28 +515,24 @@ function renderTaskSuggestions() {
 
 // ➕ Añade una sugerencia como tarea y refresca vistas
 function addSuggestedTask(name) {
-  const lang      = localStorage.getItem('lang')     || 'es';
-  const t         = translations[lang];
-  const userRole  = localStorage.getItem('userRole') || 'child';
+  const lang     = localStorage.getItem('lang')     || 'es';
+  const t        = translations[lang];
+  const role     = localStorage.getItem('userRole') || 'child';
 
-  // Solo el padre puede añadir sugerencias
-  if (userRole !== 'parent') {
-    alert(t.parentOnlyAction);
-    return;
+  // solo padres
+  if (role !== 'parent') return alert(t.parentOnlyActionT);
+
+  // no crear tras cutoff
+  const cutoff = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m] = cutoff.split(':').map(Number);
+  const now      = new Date();
+  const cutoffDT = new Date(); cutoffDT.setHours(h, m, 0, 0);
+  if (now > cutoffDT) {
+    return alert(t.afterCutoffBlockMsg);
   }
 
-  const defaultPts  = 10;
-  const defaultFreq = 'daily';
-
-  tasks.push({
-    name,
-    points:     defaultPts,
-    frequency:  defaultFreq,
-    done:       false,
-    penalized:  false,
-    childId:    activeChildId
-  });
-
+  // push
+  tasks.push({ name, points: 10, frequency: 'daily', done: false, penalized: false, childId: activeChildId });
   logCustomTask(name);
   saveTasks();
   renderTasks();
@@ -563,14 +556,44 @@ function addSuggestedTask(name) {
   });
 
 
-// 3) Inicialización única
+////////////////////////////////////////////////////////////////////////////////
+// 3) Inicialización única y lógica de rol/tab
+////////////////////////////////////////////////////////////////////////////////
 document.addEventListener('DOMContentLoaded', () => {
   // — 3.1) Idioma y rol guardados o por defecto
   const savedLang = localStorage.getItem('lang')     || 'es';
-  const savedRole = localStorage.getItem('userRole') || 'child';
   applyTranslations(savedLang);
 
-  // — 3.2) Ejecutar renders que dependen de idioma o localStorage
+  // — 3.1.1) Solicitar PIN la primera vez para padre (incluye recarga)
+  if (localStorage.getItem('userRole') === 'parent' && !localStorage.getItem('pin')) {
+    const t = translations[savedLang];
+    let newPin = '';
+    while (!newPin) {
+      newPin = prompt(t.pinCreatePrompt).trim();
+    }
+    localStorage.setItem('pin', newPin);
+    alert(t.pinCreatedMsg);
+  }
+
+  // — 3.1.2) Control de visibilidad de pestañas según rol
+  function updateTabVisibility() {
+    const role = localStorage.getItem('userRole') || 'child';
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const tab = btn.dataset.tab;
+      if (role === 'parent') {
+        btn.style.display = '';
+      } else {
+        btn.style.display = (tab === 'tasks' || tab === 'rewards') ? '' : 'none';
+      }
+    });
+  }
+  updateTabVisibility();
+
+  // — 3.1.3) Mostrar la pestaña inicial apropriada
+  const startRole = localStorage.getItem('userRole') || 'child';
+  showTab(startRole === 'parent' ? 'settings' : 'tasks');
+
+  // — 3.2) Ejecutar renders que dependen de idioma o penalizaciones
   updateHeaderName();
   updateTodayHeader();
   renderCutoffTime();
@@ -582,16 +605,20 @@ document.addEventListener('DOMContentLoaded', () => {
   applyPendingDailyPenalties();
   applyPendingWeeklyPenalties();
 
+  // — 3.2.1) Renderizar contenido de la pestaña activa
+  renderChildrenList();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+
   // — 3.3) Bienvenida: usar botones en lugar de selects
   const welcomeScreen = document.getElementById('welcome-screen');
   const langButtons   = Array.from(document.querySelectorAll('#welcome-lang-buttons button'));
   const roleButtons   = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
 
-  // Variables para estado temporal
   let welcomeLangValue = savedLang;
-  let welcomeRoleValue = savedRole;
+  let welcomeRoleValue = localStorage.getItem('userRole') || 'child';
 
-  // Función para resaltar el botón activo
   function styleButtonGroup(buttons, activeValue) {
     buttons.forEach(btn => {
       const isActive = btn.dataset.value === activeValue;
@@ -602,11 +629,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Aplicar estilo inicial
   styleButtonGroup(langButtons, welcomeLangValue);
   styleButtonGroup(roleButtons, welcomeRoleValue);
 
-  // Ocultar bienvenida si ya hay configuración
   if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
     welcomeScreen.style.display = 'none';
   }
@@ -628,88 +653,87 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // — 3.6) Botón “Comenzar”: guarda idioma y rol, pide PIN si es padre, abre Configuración y carga UI
-  document.getElementById('welcome-start')?.addEventListener('click', () => {
-    const lang = welcomeLangValue;
-    const role = welcomeRoleValue;
+// — 3.6) Botón “Comenzar”: guarda idioma y rol, pide PIN si es padre, oculta bienvenida y refresca
+document.getElementById('welcome-start')?.addEventListener('click', () => {
+  const lang = welcomeLangValue;
+  const role = welcomeRoleValue;
 
-    // Persistir idioma y rol
-    localStorage.setItem('lang',     lang);
-    localStorage.setItem('userRole', role);
+  // Persistir idioma y rol
+  localStorage.setItem('lang',     lang);
+  localStorage.setItem('userRole', role);
 
-    // Si es padre y no existe PIN, crearlo con texto traducido y navegar a Configuración
-    if (role === 'parent') {
-      const lang = localStorage.getItem('lang') || 'es';
-      const t    = translations[lang];
-
-      if (!localStorage.getItem('pin')) {
-        let newPin = '';
-        while (!newPin) {
-          // usa la clave traducida pinCreatePrompt
-          newPin = prompt(t.pinCreatePrompt).trim();
-        }
-        localStorage.setItem('pin', newPin);
-        // opcional: confirma al padre que quedó guardado
-        alert(t.pinCreatedMsg);
+  // Si es padre y no existe PIN, crearlo con texto traducido y navegar a Configuración
+  if (role === 'parent') {
+    const curLang = localStorage.getItem('lang') || 'es';
+    const t       = translations[curLang];
+    if (!localStorage.getItem('pin')) {
+      let newPin = '';
+      while (!newPin) {
+        newPin = prompt(t.pinCreatePrompt).trim();
       }
-      showTab('settings');
+      localStorage.setItem('pin', newPin);
+      alert(t.pinCreatedMsg);
     }
+    showTab('settings');
+  }
 
+  applyTranslations(lang);
+  welcomeScreen.style.display = 'none';
 
-    applyTranslations(lang);
-    welcomeScreen.style.display = 'none';
+  // Refrescar toda la UI dependiente
+  updateTodayHeader();
+  renderCutoffTime();
+  renderWeekStart();
+  renderWeeklyHistory();
+  renderBadges();
+  updatePointDisplay();
+  updateFooterVersion();
 
-    // Refrescar toda la UI dependiente
-    updateTodayHeader();
-    renderCutoffTime();
-    renderWeekStart();
-    renderWeeklyHistory();
-    renderBadges();
-    updatePointDisplay();
-    updateFooterVersion();
-
-    // Cargue inicial de datos y sugerencias
-    renderChildrenList();
-    renderTasks();
-    renderChildTasks();
-    renderTaskSuggestions();
-  });
-
-  // — 3.7) Selector permanente de idioma (ya existente)
-  document.getElementById('language-select')?.addEventListener('change', e => {
-    const lang = e.target.value;
-    localStorage.setItem('lang', lang);
-    applyTranslations(lang);
-    updateTodayHeader();
-    renderCutoffTime();
-    renderWeekStart();
-    renderWeeklyHistory();
-    renderBadges();
-    updatePointDisplay();
-    updateFooterVersion();
-  });
-});
-
-// Cambio de rol desde la interfaz o footer
-document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
-  // Alterna entre "parent" y "child"
-  const lang       = localStorage.getItem('lang')     || 'es';
-  const t          = translations[lang];
-  const current    = localStorage.getItem('userRole') || 'child';
-  const nextRole   = current === 'parent' ? 'child' : 'parent';
-
-  // Guarda el nuevo rol
-  localStorage.setItem('userRole', nextRole);
-
-  // Mensaje de confirmación con traducción dinámica
-  const roleName   = t[nextRole + 'Role'];
-  const msg        = t.roleChangedMsg.replace('{role}', roleName);
-  alert(msg);
-
-  // Refresca la sección de sugerencias (mostrándolas u ocultándolas)
+  // Cargue inicial de datos y sugerencias
+  renderChildrenList();
+  renderTasks();
+  renderChildTasks();
   renderTaskSuggestions();
 });
 
+  // — 3.8) Cambio de rol desde UI (footer)
+document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
+  const lang     = localStorage.getItem('lang')     || 'es';
+  const t        = translations[lang];
+  const current  = localStorage.getItem('userRole') || 'child';
+  const nextRole = current === 'parent' ? 'child' : 'parent';
+
+  // Si cambiamos a padre, crear o solicitar PIN
+  if (nextRole === 'parent') {
+    const storedPin = localStorage.getItem('pin');
+    if (!storedPin) {
+      let newPin = '';
+      while (!newPin) {
+        newPin = prompt(t.pinCreatePrompt).trim();
+      }
+      localStorage.setItem('pin', newPin);
+      alert(t.pinCreatedMsg);
+    } else {
+      const entered = prompt(t.pinPrompt);
+      if (entered !== storedPin) {
+        return alert(t.pinIncorrectMsg);
+      }
+    }
+  }
+
+  // Guardar nuevo rol y notificar
+  localStorage.setItem('userRole', nextRole);
+  alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
+
+  // Refrescar visibilidad y contenido
+  updateTabVisibility();
+  showTab(nextRole === 'parent' ? 'settings' : 'tasks');
+  renderChildrenList();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+});
+});
 
 ////////////////////////////////////////////////////////////////////////////////
 // X. Migración de un solo childName a array de children
@@ -1320,75 +1344,84 @@ function renderChildTasks() {
 
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
+  const role = localStorage.getItem('userRole') || 'child';
 
   container.innerHTML = '';
 
   const filtered = tasks.filter(t => t.childId === activeChildId);
-
   filtered.forEach((task, idx) => {
     const card = document.createElement('div');
-    card.className = 'task-card flex justify-between items-center p-3 mb-2 bg-white rounded shadow';
+    card.className =
+      'task-card flex justify-between items-center p-3 mb-2 bg-white rounded shadow';
 
-    // Contenedor de info (nombre, puntos, frecuencia)
+    // Info (nombre, puntos, frecuencia)
     const info = document.createElement('div');
     info.className = 'flex flex-col';
-
-    // Nombre + puntos
     const title = document.createElement('span');
     title.className = 'font-medium';
     title.textContent = `${task.name} (${task.points} ${t.pointsSuffix})`;
     info.appendChild(title);
-
-    // Frecuencia traducida
     const freq = document.createElement('span');
     freq.className = 'text-xs text-gray-500';
-    freq.textContent = task.frequency === 'weekly'
-      ? t.frequencyWeekly
-      : t.frequencyDaily;
+    freq.textContent =
+      task.frequency === 'weekly' ? t.frequencyWeekly : t.frequencyDaily;
     info.appendChild(freq);
 
     // Botón “Hecho” / “Done”
     const btn = document.createElement('button');
     btn.className = 'btn-success';
     btn.textContent = task.done ? t.markedDoneBtn : t.markDoneBtn;
-    // desactiva si ya fue marcada o si es posterior al cutoff y aún no está hecha
-    const cutoff = localStorage.getItem('cutoffTime') || '21:00';
-    const [h, m] = cutoff.split(':').map(Number);
-    const cd     = new Date(); cd.setHours(h, m, 0, 0);
-    const afterCutoff = (new Date() > cd) && !task.done;
-    btn.disabled = task.done || afterCutoff;
-    if (task.done) btn.classList.add('btn-done');
 
-    btn.addEventListener('click', () => {
-      if (task.done) return;
-      task.done = true;
+    // Calcula si pasó el cutoff
+    const cutoff     = localStorage.getItem('cutoffTime') || '21:00';
+    const [h, m]     = cutoff.split(':').map(Number);
+    const cutoffDt   = new Date();
+    cutoffDt.setHours(h, m, 0, 0);
+    const afterCutoff = new Date() > cutoffDt && !task.done;
 
-      const stats = getStatsFor(activeChildId);
-      stats.earned += task.points;
-      saveStatsMap();
-      saveTasks();
-      updatePointDisplay();
+    // Deshabilita para rol padre; para niño, según done o cutoff
+    if (role !== 'child') {
+      btn.disabled = true;
+    } else {
+      btn.disabled = task.done || afterCutoff;
+    }
 
-      btn.textContent = t.markedDoneBtn;
-      btn.disabled    = true;
+    if (task.done) {
       btn.classList.add('btn-done');
-      updatePointDisplay();
-      renderTasks();
-      renderTaskSuggestions();
+    }
 
-      const sparkle = document.createElement('div');
-      sparkle.className   = 'sparkle';
-      sparkle.textContent = '🌟';
-      card.appendChild(sparkle);
-      setTimeout(() => sparkle.remove(), 800);
-    });
+    // Solo el niño puede marcar tareas como hechas
+    if (role === 'child') {
+      btn.addEventListener('click', () => {
+        if (task.done) return;
+        task.done = true;
+
+        const stats = getStatsFor(activeChildId);
+        stats.earned += task.points;
+        saveStatsMap();
+        saveTasks();
+        updatePointDisplay();
+
+        btn.textContent = t.markedDoneBtn;
+        btn.disabled   = true;
+        btn.classList.add('btn-done');
+
+        renderTasks();
+        renderTaskSuggestions();
+
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.textContent = '🌟';
+        card.appendChild(sparkle);
+        setTimeout(() => sparkle.remove(), 800);
+      });
+    }
 
     card.appendChild(info);
     card.appendChild(btn);
     container.appendChild(card);
   });
 }
-
 
 
 function renderRewardsManage() {
@@ -1431,12 +1464,13 @@ function renderRewardsManage() {
 
 
 function renderChildRewards() {
-  const c      = document.getElementById('rewards-list');
-  const histC  = document.getElementById('redeemed-cards');
+  const c     = document.getElementById('rewards-list');
+  const histC = document.getElementById('redeemed-cards');
   if (!c || !histC) return;
 
   const lang = localStorage.getItem('lang') || 'es';
   const t    = translations[lang];
+  const role = localStorage.getItem('userRole') || 'child';
 
   // Lista de recompensas disponibles
   c.innerHTML = '';
@@ -1451,21 +1485,30 @@ function renderChildRewards() {
 
     const btn = document.createElement('button');
     btn.className = 'btn-primary';
-    if (r.stock < 1) {
+
+    // Deshabilitar canje para rol padre
+    if (role !== 'child') {
+      btn.disabled    = true;
+      btn.textContent = t.parentOnlyAction;
+    }
+    // Si niño pero sin stock
+    else if (r.stock < 1) {
       btn.disabled    = true;
       btn.textContent = t.outOfStockMsg;
-    } else {
+    }
+    // Niño con stock
+    else {
       btn.disabled      = false;
       btn.textContent   = t.redeemBtnLabel;
       btn.dataset.index = i;
       btn.addEventListener('click', () => handleRewardRedemption(i));
     }
-    block.appendChild(btn);
 
+    block.appendChild(btn);
     c.appendChild(block);
   });
 
-  // Tarjetas de recompensas canjeadas
+  // Tarjetas de recompensas canjeadas (sin cambios)
   histC.innerHTML = '';
   if (typeof redeemedHistory !== 'undefined') {
     redeemedHistory.forEach(entry => {
@@ -1484,8 +1527,8 @@ function renderChildRewards() {
       card.appendChild(info);
 
       const shareBtn = document.createElement('button');
-      shareBtn.className   = 'share-btn mt-2';
-      shareBtn.textContent = t.shareBtnLabel;
+      shareBtn.className = 'share-btn mt-2';
+      shareBtn.textContent   = t.shareBtnLabel;
       shareBtn.addEventListener('click', () => shareReward(entry.rewardName));
       card.appendChild(shareBtn);
 
@@ -1799,10 +1842,22 @@ document.getElementById('add-task')?.addEventListener('click', () => {
   const points     = parseInt(ptsInput.value, 10);
   const frequency  = freqSelect.value; // "daily" o "weekly"
 
+  // Validaciones básicas
   if (!name || isNaN(points) || !activeChildId) {
     return alert(t.createTaskInstructions);
   }
 
+  // Bloquear creación tras la hora de corte
+  const cutoff    = localStorage.getItem('cutoffTime') || '21:00';
+  const [h, m]    = cutoff.split(':').map(Number);
+  const now       = new Date();
+  const cutoffDt  = new Date();
+  cutoffDt.setHours(h, m, 0, 0);
+  if (now > cutoffDt) {
+    return alert(t.afterCutoffBlockMsg);
+  }
+
+  // Si pasa todas las validaciones, crear la tarea
   tasks.push({
     name,
     points,
@@ -1811,16 +1866,19 @@ document.getElementById('add-task')?.addEventListener('click', () => {
     penalized: false,
     childId:   activeChildId
   });
+
   saveTasks();
   renderTasks();
   renderChildTasks();
   updatePointDisplay();
   renderTaskSuggestions();
 
+  // Limpiar inputs
   nameInput.value  = '';
   ptsInput.value   = '';
   freqSelect.value = 'daily';
 });
+
 
 // — Editar / Eliminar tarea
 document.getElementById('tasks-manage')?.addEventListener('click', e => {
