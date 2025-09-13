@@ -21,6 +21,33 @@ import {
 console.log('✅ Firebase Auth:', auth);
 console.log('✅ Firestore DB:', db);
 
+// — Inicializa sesión de usuario: carga perfil, arranca listeners y muestra bienvenida
+async function initUserSession(user) {
+  // 1) Leer perfil Firestore
+  const snap = await getDoc(doc(db, 'users', user.uid));
+  if (!snap.exists()) {
+    console.warn('Perfil no encontrado, reintentando en 500ms…');
+    await new Promise(r => setTimeout(r, 500));
+    return initUserSession(user);
+  }
+  const { displayName, role, familyCode } = snap.data();
+
+  // 2) Guardar en localStorage
+  localStorage.setItem('displayName', displayName);
+  localStorage.setItem('userRole',     role);
+  localStorage.setItem('familyCode',   familyCode);
+
+  // 3) Mostrar FamilyCode en UI
+  const codeEl = document.getElementById('family-code-display');
+  if (codeEl) codeEl.textContent = familyCode;
+
+  // 4) Arrancar listeners en tiempo real
+  startRealtimeListeners(familyCode);
+
+  // 5) Mostrar pantalla de bienvenida
+  showWelcomeScreen();
+}
+
 // — Genera un código familiar de 5 caracteres
 function generateFamilyCode() {
   return Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -84,7 +111,7 @@ async function registerParent(email, password) {
     joinedAt:    serverTimestamp()
   });
 
-  return code;
+  return user;
 }
 
 // — Login de padre
@@ -97,61 +124,65 @@ async function loginParent(email, password) {
 async function joinAsChild(code, name) {
   const { user } = await signInAnonymously(auth);
   const famSnap  = await getDoc(doc(db, 'families', code));
-
   if (!famSnap.exists()) {
     throw new Error(translations[localStorage.getItem('lang')].invalidFamilyCodeMsg);
   }
-
   await setDoc(doc(db, 'users', user.uid), {
     displayName: name,
     role:        'child',
     familyCode:  code,
     joinedAt:    serverTimestamp()
   });
+  return user;
 }
 
 // — Inicia listeners en tiempo real
 function startRealtimeListeners(familyCode) {
   // Usuarios
-  const qUsers = query(collection(db, 'users'), where('familyCode', '==', familyCode));
-  onSnapshot(qUsers, snap => {
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof renderChildrenList === 'function') renderChildrenList(list);
-  });
+  onSnapshot(
+    query(collection(db, 'users'), where('familyCode','==',familyCode)),
+    snap => {
+      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (typeof renderChildrenList === 'function') renderChildrenList(list);
+    }
+  );
 
   // Tareas
-  const qTasks = query(collection(db, 'tasks'), where('familyCode', '==', familyCode));
-  onSnapshot(qTasks, snap => {
-    const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof renderTasks === 'function')      renderTasks(tasks);
-    if (typeof renderChildTasks === 'function') renderChildTasks(tasks);
-  });
+  onSnapshot(
+    query(collection(db, 'tasks'), where('familyCode','==',familyCode)),
+    snap => {
+      const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (typeof renderTasks === 'function')      renderTasks(tasks);
+      if (typeof renderChildTasks === 'function') renderChildTasks(tasks);
+    }
+  );
 
   // Recompensas
-  const qRewards = query(collection(db, 'rewards'), where('familyCode', '==', familyCode));
-  onSnapshot(qRewards, snap => {
-    const rewards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof renderChildRewards === 'function') renderChildRewards(rewards);
-  });
+  onSnapshot(
+    query(collection(db, 'rewards'), where('familyCode','==',familyCode)),
+    snap => {
+      const rewards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (typeof renderChildRewards === 'function') renderChildRewards(rewards);
+    }
+  );
 }
 
 // — Carga UI tras welcome
 function loadFamilyData() {
-  if (typeof updateHeaderName === 'function')   updateHeaderName();
-  if (typeof updatePointDisplay === 'function') updatePointDisplay();
+  if (typeof updateHeaderName === 'function')      updateHeaderName();
+  if (typeof updatePointDisplay === 'function')    updatePointDisplay();
   if (typeof renderTaskSuggestions === 'function') renderTaskSuggestions();
 }
 
 // ========================================================
-
 document.addEventListener('DOMContentLoaded', () => {
   // — Registro padre
   document.getElementById('btn-signup')?.addEventListener('click', async () => {
     const email = document.getElementById('auth-email').value.trim();
     const pass  = document.getElementById('auth-pass').value;
     try {
-      const code = await registerParent(email, pass);
-      alert(`Registro OK. Código familiar: ${code}`);
+      const user = await registerParent(email, pass);
+      await initUserSession(user);
     } catch (e) {
       showAuthError(e.message);
     }
@@ -162,7 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = document.getElementById('auth-email').value.trim();
     const pass  = document.getElementById('auth-pass').value;
     try {
-      await loginParent(email, pass);
+      const user = await loginParent(email, pass);
+      await initUserSession(user);
     } catch (e) {
       showAuthError(e.message);
     }
@@ -173,17 +205,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const code  = document.getElementById('join-family-code').value.trim();
     const name  = document.getElementById('join-child-name').value.trim();
     const errEl = document.getElementById('join-error');
-    errEl && (errEl.textContent = '');
-
+    if (errEl) errEl.textContent = '';
     if (!code || !name) {
-      errEl && (errEl.textContent = translations[localStorage.getItem('lang')].eventMissingFields);
+      if (errEl) {
+        errEl.textContent = translations[localStorage.getItem('lang')].eventMissingFields;
+      }
       return;
     }
     try {
-      await joinAsChild(code, name);
+      const user = await joinAsChild(code, name);
+      await initUserSession(user);
       alert(translations[localStorage.getItem('lang')].childJoinSuccessMsg.replace('{name}', name));
     } catch (e) {
-      errEl && (errEl.textContent = e.message);
+      if (errEl) errEl.textContent = e.message;
     }
   });
 
@@ -222,20 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showInitialScreen();
       showAuthSections(user);
     } else {
-      // Cargo perfil Firestore
-      const snap = await getDoc(doc(db, 'users', user.uid));
-      if (snap.exists()) {
-        const { displayName, role, familyCode } = snap.data();
-        localStorage.setItem('displayName', displayName);
-        localStorage.setItem('userRole',     role);
-        localStorage.setItem('familyCode',   familyCode);
-
-        const codeEl = document.getElementById('family-code-display');
-        codeEl && (codeEl.textContent = familyCode);
-
-        startRealtimeListeners(familyCode);
-      }
-      showWelcomeScreen();
+      await initUserSession(user);
     }
   });
 });
