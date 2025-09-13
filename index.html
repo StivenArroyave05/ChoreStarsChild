@@ -14,13 +14,33 @@
 
 <body class="bg-blue-50 min-h-screen flex flex-col font-sans">
 
-<!-- Pantalla de bienvenida con botones en lugar de <select> -->
-<div id="welcome-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4">
-  <img id="welcome-logo"
-       src="assets/logo.png"
-       alt="Chore Stars Logo"
-       class="h-12 w-auto mb-4" />
+<!-- 1) Pantalla inicial: login (padre) y join (niño) -->
+<div id="initial-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4">
+  
+  <!-- Auth padre -->
+  <section id="auth-section" class="mb-6 w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">👤 Padre – Registro / Login</h2>
+    <div id="auth-error" class="text-red-600 mb-2"></div>
+    <input id="auth-email" type="email" placeholder="Email" class="w-full p-2 mb-2 border rounded" />
+    <input id="auth-pass"  type="password" placeholder="Contraseña" class="w-full p-2 mb-4 border rounded" />
+    <button id="btn-signup" class="w-full bg-blue-600 text-white p-2 rounded mb-2">Registrarse</button>
+    <button id="btn-login"  class="w-full bg-green-600 text-white p-2 rounded">Iniciar sesión</button>
+  </section>
 
+  <!-- Join hijo -->
+  <section id="child-join-section" class="w-full max-w-md">
+    <h2 class="text-xl font-bold mb-4">👦👧 Unirse a la familia</h2>
+    <div id="join-error" class="text-red-600 mb-2"></div>
+    <input id="join-family-code" type="text" placeholder="Código familiar" class="w-full p-2 mb-2 border rounded" />
+    <input id="join-child-name"  type="text" placeholder="Nombre del niño" class="w-full p-2 mb-4 border rounded" />
+    <button id="btn-join-family" class="w-full bg-purple-600 text-white p-2 rounded">Unirse</button>
+  </section>
+
+</div>
+
+<!-- 2) Pantalla de bienvenida: idioma + rol -->
+<div id="welcome-screen" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-4" style="display:none">
+  <img id="welcome-logo" src="assets/logo.png" alt="Chore Stars Logo" class="h-12 w-auto mb-4" />
   <h1 class="text-center text-3xl font-extrabold mb-4" data-i18n="welcomeTitle">
     Bienvenido a Chore Stars Child
   </h1>
@@ -28,47 +48,32 @@
     Organiza tareas y recompensas de forma divertida y segura.
   </p>
 
-  <!-- Botones de idioma -->
+  <!-- Idioma -->
   <div class="mb-6 text-center">
     <span class="mr-2" data-i18n="languageLabel">Idioma:</span>
     <div id="welcome-lang-buttons" class="inline-flex border rounded overflow-hidden">
-      <button type="button"
-              data-value="es"
-              class="px-4 py-2 text-sm font-medium"
-              data-i18n="langEs">
-        Español
-      </button>
-      <button type="button"
-              data-value="en"
-              class="px-4 py-2 text-sm font-medium"
-              data-i18n="langEn">
-        English
-      </button>
+      <button data-value="es" class="px-4 py-2 text-sm font-medium" data-i18n="langEs">Español</button>
+      <button data-value="en" class="px-4 py-2 text-sm font-medium" data-i18n="langEn">English</button>
     </div>
   </div>
 
-  <!-- Botones de rol -->
+  <!-- Rol (se inicía con lo elegido en Auth/Join) -->
   <div class="mb-6 text-center">
     <span class="mr-2" data-i18n="roleSelectionLabel">Seleccionar rol:</span>
     <div id="welcome-role-buttons" class="inline-flex border rounded overflow-hidden">
-      <button type="button"
-              data-value="parent"
-              class="px-4 py-2 text-sm font-medium"
-              data-i18n="parentRole">
-        Padre
-      </button>
-      <button type="button"
-              data-value="child"
-              class="px-4 py-2 text-sm font-medium"
-              data-i18n="childRole">
-        Niño
-      </button>
+      <button data-value="parent" class="px-4 py-2 text-sm font-medium" data-i18n="parentRole">Padre</button>
+      <button data-value="child"  class="px-4 py-2 text-sm font-medium" data-i18n="childRole">Niño</button>
     </div>
   </div>
 
   <button id="welcome-start" class="btn btn-primary px-6 py-2" data-i18n="startButton">
     Comenzar
   </button>
+</div>
+
+<!-- 3) Contenedor principal de la app (oculto hasta completar pasos anteriores) -->
+<div id="app-root" style="display:none">
+  <!-- ... aquí va el resto de tu app ... -->
 </div>
 
 
@@ -197,6 +202,7 @@
   >
     Gestión de niños
   </label>
+  <p>Código familiar: <span id="family-code-display"></span></p>
   <div class="flex gap-2 items-center">
     <input
       id="new-child-name"
@@ -466,8 +472,6 @@
     </div>
   </div>
 
-
-  <script type="module" src="main.js"></script>
    <div id="toast"
        class="fixed bottom-4 right-4 bg-white text-gray-800 shadow-lg rounded px-4 py-3 hidden z-50">
   </div>
@@ -490,5 +494,7 @@
   <span data-i18n="footerText"></span>
 </footer>
 
+
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>
