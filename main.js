@@ -669,10 +669,15 @@ document.getElementById('welcome-start')?.addEventListener('click', () => {
   localStorage.setItem('lang',     lang);
   localStorage.setItem('userRole', role);
 
-  // Si es padre y no existe PIN, crearlo con texto traducido y navegar a Configuración
+  applyTranslations(lang);
+  welcomeScreen.style.display = 'none';
+
+  // ✅ Asegura que las pestañas se actualicen según el rol antes de mostrar vista
+  updateTabVisibility();
+
+  // ✅ Si es padre y no existe PIN, crearlo con texto traducido y navegar a Configuración
   if (role === 'parent') {
-    const curLang = localStorage.getItem('lang') || 'es';
-    const t       = translations[curLang];
+    const t = translations[lang];
     if (!localStorage.getItem('pin')) {
       let newPin = '';
       while (!newPin) {
@@ -682,10 +687,9 @@ document.getElementById('welcome-start')?.addEventListener('click', () => {
       alert(t.pinCreatedMsg);
     }
     showTab('settings');
+  } else {
+    showTab('tasks');
   }
-
-  applyTranslations(lang);
-  welcomeScreen.style.display = 'none';
 
   // Refrescar toda la UI dependiente
   updateTodayHeader();
@@ -701,6 +705,7 @@ document.getElementById('welcome-start')?.addEventListener('click', () => {
   renderTasks();
   renderChildTasks();
   renderTaskSuggestions();
+  renderChildRewards(); // ✅ asegura que recompensas se actualicen según rol
 });
 
   // — 3.8) Cambio de rol desde UI (footer)
@@ -739,6 +744,7 @@ document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
   renderTasks();
   renderChildTasks();
   renderTaskSuggestions();
+  renderChildRewards();
 });
 });
 
