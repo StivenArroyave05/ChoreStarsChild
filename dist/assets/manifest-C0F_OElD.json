@@ -1,0 +1,20 @@
+{
+  "name": "Chore Stars Child",
+  "short_name": "ChoreStars",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "theme_color": "#2563EB",
+  "background_color": "#f0f9ff"
+}
