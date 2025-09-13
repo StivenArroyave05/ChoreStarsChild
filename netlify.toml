@@ -2,13 +2,35 @@
   command = "npm run build"
   publish = "dist"
 
-# 1) Asegúrate de que los archivos estáticos bajo /assets se sirvan directamente
+# Sirve el service worker real
+[[redirects]]
+  from   = "/service-worker.js"
+  to     = "/service-worker.js"
+  status = 200
+  force  = true
+
+# Sirve el manifest real
+[[redirects]]
+  from   = "/manifest.webmanifest"
+  to     = "/manifest.webmanifest"
+  status = 200
+  force  = true
+
+# Sirve los iconos reales
+[[redirects]]
+  from   = "/icons/*"
+  to     = "/icons/:splat"
+  status = 200
+  force  = true
+
+# Sirve los assets reales (js/css)
 [[redirects]]
   from   = "/assets/*"
   to     = "/assets/:splat"
   status = 200
+  force  = true
 
-# 2) Fallback para tu SPA: cualquier otra ruta va a index.html
+# Fallback SPA: todo lo demás va a index.html
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
