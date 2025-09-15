@@ -34,6 +34,59 @@ function showScreen(screenId) {
     });
 }
 
+function startSession(lang, role) {
+  if (!activeChildId) {
+    return alert('❗ Debes seleccionar un niño antes de comenzar.');
+  }
+
+  localStorage.setItem('lang', lang);
+  localStorage.setItem('userRole', role);
+  localStorage.setItem('activeChildId', activeChildId);
+  localStorage.setItem('sessionStarted', 'true');
+
+  applyTranslations(lang);
+  updateTabVisibility();
+
+  if (role === 'parent') {
+    const t = translations[lang];
+    const storedPin = localStorage.getItem('pin');
+
+    if (!storedPin) {
+      let newPin = '';
+      while (!newPin) {
+        newPin = prompt(t.pinCreatePrompt).trim();
+      }
+      localStorage.setItem('pin', newPin);
+      alert(t.pinCreatedMsg);
+    } else {
+      const entered = prompt(t.pinPrompt);
+      if (entered !== storedPin) {
+        return alert(t.pinIncorrectMsg);
+      }
+    }
+
+    showTab('settings');
+  } else {
+    showTab('tasks');
+  }
+
+  showScreen('app-root');
+  renderChildrenList();
+  updateHeaderName();
+  updateTodayHeader();
+  renderCutoffTime();
+  renderWeekStart();
+  renderWeeklyHistory();
+  renderBadges();
+  updatePointDisplay();
+  updateFooterVersion();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+  renderChildRewards();
+}
+
+
 // — Copia familyCode al portapapeles
 document.getElementById('btn-copy-code')?.addEventListener('click', () => {
   const code = localStorage.getItem('familyCode');
@@ -80,6 +133,19 @@ async function waitForFamilyCode(code, retries = 5, delay = 500) {
   throw new Error(translations[localStorage.getItem('lang')].invalidFamilyCodeMsg);
 }
 
+function updateTabVisibility() {
+  const role = localStorage.getItem('userRole') || 'child';
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const tab = btn.dataset.tab;
+    btn.style.display = (
+      role === 'parent' ||
+      tab === 'tasks' ||
+      tab === 'rewards'
+    ) ? '' : 'none';
+  });
+}
+
+
 // — Inicia sesión y levanta listeners
 async function initUserSession(user) {
   // 1) Obtener perfil
@@ -90,14 +156,16 @@ async function initUserSession(user) {
   }
 
   const { role, familyCode } = userSnap.data();
+  localStorage.setItem('userRole', role);
   localStorage.setItem('familyCode', familyCode);
+  updateTabVisibility();
 
   // 2) Mostrar el código familiar en todas las ubicaciones
-const el1 = document.getElementById('family-code-display');
-if (el1) el1.textContent = familyCode;
+  const el1 = document.getElementById('family-code-display');
+  if (el1) el1.textContent = familyCode;
 
-const el2 = document.getElementById('settings-family-code');
-if (el2) el2.textContent = familyCode;
+  const el2 = document.getElementById('settings-family-code');
+  if (el2) el2.textContent = familyCode;
 
   // 3) Listener en tiempo real SOLO para hijos
   onSnapshot(
@@ -113,11 +181,15 @@ if (el2) el2.textContent = familyCode;
         age:  d.data().age || null
       }));
 
-      if (!activeChildId && children.length) {
-        activeChildId = children[0].id;
+      if (children.length) {
+        if (!activeChildId || !children.find(c => c.id === activeChildId)) {
+          activeChildId = children[0].id;
+          localStorage.setItem('activeChildId', activeChildId);
+        }
+        localStorage.setItem('sessionStarted', 'true');
       }
 
-      renderChildrenList(); // ← actualiza ambas listas si usas IDs únicos
+      renderChildrenList();
       updateHeaderName();
     }
   );
@@ -130,35 +202,46 @@ if (el2) el2.textContent = familyCode;
       renderChildTasks?.(snap.docs);
     }
   );
+
   onSnapshot(
     query(collection(db, 'rewards'), where('familyCode', '==', familyCode)),
     snap => renderChildRewards?.(snap.docs)
   );
 
-// 5) Flujo padre vs. hijo
-if (role === 'parent') {
-  await waitForFamilyCode(familyCode);
+  // 5) Flujo padre vs. hijo
+  if (role === 'parent') {
+    await waitForFamilyCode(familyCode);
 
-  const kidsSnap = await getDocs(
-    query(
-      collection(db, 'users'),
-      where('familyCode', '==', familyCode),
-      where('role', '==', 'child')
-    )
-  );
+    const kidsSnap = await getDocs(
+      query(
+        collection(db, 'users'),
+        where('familyCode', '==', familyCode),
+        where('role', '==', 'child')
+      )
+    );
 
-  if (kidsSnap.empty) {
-    const inviteEl = document.getElementById('invite-code-display');
-    if (inviteEl) inviteEl.textContent = familyCode;
-    return showScreen('invite-screen');
+    const hasChildren = !kidsSnap.empty;
+    const storedChildId = localStorage.getItem('activeChildId');
+    const childExists = kidsSnap.docs.some(doc => doc.id === storedChildId);
+
+    if (!hasChildren) {
+      const inviteEl = document.getElementById('invite-code-display');
+      if (inviteEl) inviteEl.textContent = familyCode;
+      showScreen('invite-screen');
+      return;
+    }
+
+    if (!childExists) {
+      showScreen('welcome-screen');
+      return;
+    }
   }
 
-  showScreen('welcome-screen');
-  return;
+  // 6) Iniciar sesión completa
+  const lang = localStorage.getItem('lang') || 'es';
+  startSession(lang, role);
 }
 
-  showScreen('app-root');
-}
 
 // — Registra un padre y su familia
 async function registerParent(email, pass) {
@@ -211,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass  = document.getElementById('auth-pass').value;
       const user  = await registerParent(email, pass);
       await initUserSession(user);
-      localStorage.setItem('sessionStarted', 'true');
     } catch (e) {
       document.getElementById('auth-error').textContent = e.message;
     }
@@ -224,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass  = document.getElementById('auth-pass').value;
       const user  = await loginParent(email, pass);
       await initUserSession(user);
-      localStorage.setItem('sessionStarted', 'true');
     } catch (e) {
       document.getElementById('auth-error').textContent = e.message;
     }
@@ -243,8 +324,6 @@ document.getElementById('btn-join-family')?.addEventListener('click', async () =
 
     const user = await joinAsChild(code, name, age);
     await initUserSession(user);
-    localStorage.setItem('sessionStarted', 'true');
-
     localStorage.setItem('userRole', 'child');
     localStorage.setItem('lang', localStorage.getItem('lang') || 'es');
 
@@ -254,29 +333,39 @@ document.getElementById('btn-join-family')?.addEventListener('click', async () =
   }
 });
 
+// Seleccionar / Eliminar niño 
+document.getElementById('children-list')?.addEventListener('click', async e => {
+  const lang = localStorage.getItem('lang') || 'es';
+  const id   = e.target.dataset.id;
 
-  // Seleccionar / Eliminar niño
-  document.getElementById('children-list')?.addEventListener('click', async e => {
-    const lang = localStorage.getItem('lang') || 'es';
-    const id   = e.target.dataset.id;
+  if (e.target.classList.contains('select-child')) {
+    activeChildId = id;
+    localStorage.setItem('activeChildId', activeChildId);
+    updateHeaderName();
+    return selectChild(id);
+  }
 
-    if (e.target.classList.contains('select-child')) {
-      return selectChild(id);
-    }
-    if (e.target.classList.contains('delete-child')) {
-      const child = children.find(c => c.id === id);
-      const msg   = translations[lang].confirmDeleteChild.replace('{name}', child?.name);
-      if (!confirm(msg)) return;
+  if (e.target.classList.contains('delete-child')) {
+    const child = children.find(c => c.id === id);
+    const msg   = translations[lang].confirmDeleteChild.replace('{name}', child?.name);
+    if (!confirm(msg)) return;
 
-      // Borra el niño de Firestore; el snapshot refresca la lista
-      await deleteDoc(doc(db, 'users', id));
+    await deleteDoc(doc(db, 'users', id));
 
-      if (activeChildId === id) {
-        activeChildId = children.find(c => c.id !== id)?.id || null;
-        if (activeChildId) selectChild(activeChildId);
+    if (activeChildId === id) {
+      activeChildId = children.find(c => c.id !== id)?.id || null;
+      if (activeChildId) {
+        localStorage.setItem('activeChildId', activeChildId);
+        selectChild(activeChildId);
+      } else {
+        localStorage.removeItem('activeChildId');
+        localStorage.removeItem('sessionStarted');
+        showScreen('welcome-screen');
       }
     }
-  });
+  }
+});
+
 
   // AUTH STATE OBSERVER
   onAuthStateChanged(auth, user => {
@@ -936,7 +1025,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // 3) Inicialización única y lógica de rol/tab
 ////////////////////////////////////////////////////////////////////////////////
 
-// ✅ Ocultar pantallas de inicio lo antes posible
 document.addEventListener('DOMContentLoaded', () => {
   const initial = document.getElementById('initial-screen');
   const welcome = document.getElementById('welcome-screen');
@@ -947,17 +1035,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedRole = localStorage.getItem('userRole') || 'child';
   activeChildId = localStorage.getItem('activeChildId') || null;
 
+  // ✅ Restaurar sesión si está completa
   if (sessionStarted && savedRole && activeChildId) {
-    if (initial) initial.style.display = 'none';
-    if (welcome) welcome.style.display = 'none';
-    if (appRoot) appRoot.style.display = 'block';
-
     showScreen('app-root');
     applyTranslations(savedLang);
     updateTabVisibility();
     showTab(savedRole === 'parent' ? 'settings' : 'tasks');
 
-    const unsubscribe = onSnapshot(
+    onSnapshot(
       query(
         collection(db, 'users'),
         where('familyCode', '==', localStorage.getItem('familyCode')),
@@ -977,6 +1062,9 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('activeChildId', activeChildId);
         }
 
+        // ✅ Marcar sesión iniciada solo cuando hay niño activo
+        localStorage.setItem('sessionStarted', 'true');
+
         updateHeaderName();
         updateTodayHeader();
         renderChildTasks();
@@ -989,10 +1077,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // — Si no hay sesión iniciada, continuar con flujo de bienvenida
-  if (initial) initial.style.display = 'block';
-  if (welcome) welcome.style.display = 'none';
-  if (appRoot) appRoot.style.display = 'none';
+  // — Si no hay sesión iniciada, mostrar pantalla inicial
+  showScreen('initial-screen');
   applyTranslations(savedLang);
   renderChildrenList();
 
@@ -1033,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderChildTasks();
   renderTaskSuggestions();
 
+
   const langButtons = Array.from(document.querySelectorAll('#welcome-lang-buttons button'));
   const roleButtons = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
 
@@ -1071,56 +1158,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  document.getElementById('welcome-start')?.addEventListener('click', () => {
-    const lang = welcomeLangValue || 'es';
-    const role = welcomeRoleValue || 'child';
-
-    localStorage.setItem('lang', lang);
-    localStorage.setItem('userRole', role);
-    localStorage.setItem('activeChildId', activeChildId);
-
-    applyTranslations(lang);
-    updateTabVisibility();
-
-    if (role === 'parent') {
-      const t = translations[lang];
-      const storedPin = localStorage.getItem('pin');
-
-      if (!storedPin) {
-        let newPin = '';
-        while (!newPin) {
-          newPin = prompt(t.pinCreatePrompt).trim();
-        }
-        localStorage.setItem('pin', newPin);
-        alert(t.pinCreatedMsg);
-      } else {
-        const entered = prompt(t.pinPrompt);
-        if (entered !== storedPin) {
-          return alert(t.pinIncorrectMsg);
-        }
-      }
-
-      showTab('settings');
-    } else {
-      showTab('tasks');
-    }
-
-    showScreen('app-root');
-    applyTranslations(lang);
-    renderChildrenList();
-    updateHeaderName();
-    updateTodayHeader();
-    renderCutoffTime();
-    renderWeekStart();
-    renderWeeklyHistory();
-    renderBadges();
-    updatePointDisplay();
-    updateFooterVersion();
-    renderTasks();
-    renderChildTasks();
-    renderTaskSuggestions();
-    renderChildRewards();
-  });
+document.getElementById('welcome-start')?.addEventListener('click', () => {
+  const lang = welcomeLangValue || 'es';
+  const role = welcomeRoleValue || 'child';
+  startSession(lang, role);
+});
 
   document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
     const lang     = localStorage.getItem('lang') || 'es';
@@ -1160,6 +1202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderChildRewards();
   });
 });
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // 0. Funciones para renderizar y cambiar de niño activo
@@ -2251,7 +2294,7 @@ document.getElementById('add-child')?.addEventListener('click', () => {
 });
 
 
-// ➖ Evento Seleccionar / Eliminar Niño
+// ➖ Evento Seleccionar / Eliminar Niño 
 ['children-list', 'settings-children-list'].forEach(listId => {
   document.getElementById(listId)?.addEventListener('click', async e => {
     const lang = localStorage.getItem('lang') || 'es';
@@ -2259,6 +2302,9 @@ document.getElementById('add-child')?.addEventListener('click', () => {
 
     // Seleccionar niño
     if (e.target.classList.contains('select-child')) {
+      activeChildId = id;
+      localStorage.setItem('activeChildId', activeChildId);
+      updateHeaderName();
       return selectChild(id);
     }
 
@@ -2274,12 +2320,19 @@ document.getElementById('add-child')?.addEventListener('click', () => {
 
       if (activeChildId === id) {
         activeChildId = children.find(c => c.id !== id)?.id || null;
-        if (activeChildId) selectChild(activeChildId);
-        else showScreen('welcome-screen');
+        if (activeChildId) {
+          localStorage.setItem('activeChildId', activeChildId);
+          selectChild(activeChildId);
+        } else {
+          localStorage.removeItem('activeChildId');
+          localStorage.removeItem('sessionStarted');
+          showScreen('welcome-screen');
+        }
       }
     }
   });
 });
+
 
 
 // ➕ Evento “Añadir Tarea”
