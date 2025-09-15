@@ -35,12 +35,16 @@ function showScreen(screenId) {
 }
 
 function startSession(lang, role) {
+  const t = translations[lang];
+
+  // Validación solo para padres sin niño activo
   if (role === 'parent' && !activeChildId) {
-  const msg = translations[lang]?.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.';
-  alert(msg);
-  return;
+    const msg = t?.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.';
+    alert(msg);
+    return;
   }
 
+  // Guardar estado de sesión
   localStorage.setItem('lang', lang);
   localStorage.setItem('userRole', role);
   localStorage.setItem('activeChildId', activeChildId);
@@ -49,45 +53,46 @@ function startSession(lang, role) {
   applyTranslations(lang);
   updateTabVisibility();
 
-  if (role === 'parent') {
-    const t = translations[lang];
-    const storedPin = localStorage.getItem('pin');
+// Validación de PIN para padres
+if (role === 'parent') {
+  const storedPin = localStorage.getItem('pin');
 
-    if (!storedPin) {
-      let newPin = '';
-      while (!newPin) {
-        newPin = prompt(t.pinCreatePrompt).trim();
-      }
-      localStorage.setItem('pin', newPin);
-      alert(t.pinCreatedMsg);
-    } else {
-      const entered = prompt(t.pinPrompt);
-      if (entered !== storedPin) {
-        return alert(t.pinIncorrectMsg);
-      }
+  if (!storedPin) {
+    let newPin = '';
+    while (!newPin) {
+      newPin = prompt(t.pinCreatePrompt).trim();
     }
-
-    showTab('settings');
+    localStorage.setItem('pin', newPin);
+    alert(t.pinCreatedMsg);
   } else {
-    showTab('tasks');
+    const entered = prompt(t.pinPrompt);
+    if (entered !== storedPin) {
+      alert(t.pinIncorrectMsg);
+      return;
+    }
   }
 
-  showScreen('app-root');
-  renderChildrenList();
-  updateHeaderName();
-  updateTodayHeader();
-  renderCutoffTime();
-  renderWeekStart();
-  renderWeeklyHistory();
-  renderBadges();
-  updatePointDisplay();
-  updateFooterVersion();
-  renderTasks();
-  renderChildTasks();
-  renderTaskSuggestions();
-  renderChildRewards();
+  showTab('settings');
+} else {
+  showTab('tasks');
 }
 
+// Renderizado completo
+showScreen('app-root');
+renderChildrenList();
+updateHeaderName();
+updateTodayHeader();
+renderCutoffTime();
+renderWeekStart();
+renderWeeklyHistory();
+renderBadges();
+updatePointDisplay();
+updateFooterVersion();
+renderTasks();
+renderChildTasks();
+renderTaskSuggestions();
+renderChildRewards();
+}
 
 // — Copia familyCode al portapapeles
 document.getElementById('btn-copy-code')?.addEventListener('click', () => {
@@ -1176,45 +1181,57 @@ document.getElementById('welcome-start')?.addEventListener('click', () => {
   startSession(lang, role);
 });
 
-  document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
-    const lang     = localStorage.getItem('lang') || 'es';
-    const t        = translations[lang];
-    const current  = localStorage.getItem('userRole') || 'child';
-    const nextRole = current === 'parent' ? 'child' : 'parent';
-    activeChildId = localStorage.getItem('activeChildId') || null;
+document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
+  const lang     = localStorage.getItem('lang') || 'es';
+  const t        = translations[lang];
+  const current  = localStorage.getItem('userRole') || 'child';
+  const nextRole = current === 'parent' ? 'child' : 'parent';
+  activeChildId  = localStorage.getItem('activeChildId') || null;
 
-    if (nextRole === 'parent') {
-      const storedPin = localStorage.getItem('pin');
-      if (!storedPin) {
-        let newPin = '';
-        while (!newPin) {
-          newPin = prompt(t.pinCreatePrompt).trim();
-        }
-        localStorage.setItem('pin', newPin);
-        alert(t.pinCreatedMsg);
-      } else {
-        const entered = prompt(t.pinPrompt);
-        if (entered !== storedPin) {
-          return alert(t.pinIncorrectMsg);
-        }
+  // Validar PIN solo si cambiamos a rol padre
+  if (nextRole === 'parent') {
+    const storedPin = localStorage.getItem('pin');
+    const pinValidated = sessionStorage.getItem('pinValidated');
+
+    if (!storedPin) {
+      let newPin = '';
+      while (!newPin) {
+        newPin = prompt(t.pinCreatePrompt).trim();
       }
+      localStorage.setItem('pin', newPin);
+      alert(t.pinCreatedMsg);
+      sessionStorage.setItem('pinValidated', 'true');
+    } else if (!pinValidated) {
+      const entered = prompt(t.pinPrompt);
+      if (entered !== storedPin) {
+        alert(t.pinIncorrectMsg);
+        return;
+      }
+      sessionStorage.setItem('pinValidated', 'true');
     }
 
-    localStorage.setItem('userRole', nextRole);
-    alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
+    // Validar que haya niño activo
+    if (!activeChildId) {
+      alert(t.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.');
+      return;
+    }
+  }
 
-    updateTabVisibility();
-    showTab(nextRole === 'parent' ? 'settings' : 'tasks');
-    applyTranslations(lang);
-    updateHeaderName();
-    renderChildrenList();
-    renderTasks();
-    renderChildTasks();
-    renderTaskSuggestions();
-    renderChildRewards();
-  });
+  // Guardar nuevo rol y actualizar interfaz
+  localStorage.setItem('userRole', nextRole);
+  alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
+
+  applyTranslations(lang);
+  updateTabVisibility();
+  showTab(nextRole === 'parent' ? 'settings' : 'tasks');
+  updateHeaderName();
+  renderChildrenList();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+  renderChildRewards();
 });
-
+});
 
 ////////////////////////////////////////////////////////////////////////////////
 // 0. Funciones para renderizar y cambiar de niño activo
