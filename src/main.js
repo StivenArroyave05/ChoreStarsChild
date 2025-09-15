@@ -1180,57 +1180,6 @@ document.getElementById('welcome-start')?.addEventListener('click', () => {
   const role = welcomeRoleValue || 'child';
   startSession(lang, role);
 });
-
-document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
-  const lang     = localStorage.getItem('lang') || 'es';
-  const t        = translations[lang];
-  const current  = localStorage.getItem('userRole') || 'child';
-  const nextRole = current === 'parent' ? 'child' : 'parent';
-  activeChildId  = localStorage.getItem('activeChildId') || null;
-
-  // Validar PIN solo si cambiamos a rol padre
-  if (nextRole === 'parent') {
-    const storedPin = localStorage.getItem('pin');
-    const pinValidated = sessionStorage.getItem('pinValidated');
-
-    if (!storedPin) {
-      let newPin = '';
-      while (!newPin) {
-        newPin = prompt(t.pinCreatePrompt).trim();
-      }
-      localStorage.setItem('pin', newPin);
-      alert(t.pinCreatedMsg);
-      sessionStorage.setItem('pinValidated', 'true');
-    } else if (!pinValidated) {
-      const entered = prompt(t.pinPrompt);
-      if (entered !== storedPin) {
-        alert(t.pinIncorrectMsg);
-        return;
-      }
-      sessionStorage.setItem('pinValidated', 'true');
-    }
-
-    // Validar que haya niño activo
-    if (!activeChildId) {
-      alert(t.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.');
-      return;
-    }
-  }
-
-  // Guardar nuevo rol y actualizar interfaz
-  localStorage.setItem('userRole', nextRole);
-  alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
-
-  applyTranslations(lang);
-  updateTabVisibility();
-  showTab(nextRole === 'parent' ? 'settings' : 'tasks');
-  updateHeaderName();
-  renderChildrenList();
-  renderTasks();
-  renderChildTasks();
-  renderTaskSuggestions();
-  renderChildRewards();
-});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2700,6 +2649,56 @@ document.getElementById('install-updates')
     flashMessage(t.searchingUpdates);
   });
 
+document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
+  const lang     = localStorage.getItem('lang') || 'es';
+  const t        = translations[lang];
+  const current  = localStorage.getItem('userRole') || 'child';
+  const nextRole = current === 'parent' ? 'child' : 'parent';
+  activeChildId  = localStorage.getItem('activeChildId') || null;
+
+  // Validar PIN solo si cambiamos a rol padre
+  if (nextRole === 'parent') {
+    const storedPin = localStorage.getItem('pin');
+    const pinValidated = sessionStorage.getItem('pinValidated');
+
+    if (!storedPin) {
+      let newPin = '';
+      while (!newPin) {
+        newPin = prompt(t.pinCreatePrompt).trim();
+      }
+      localStorage.setItem('pin', newPin);
+      alert(t.pinCreatedMsg);
+      sessionStorage.setItem('pinValidated', 'true');
+    } else if (!pinValidated) {
+      const entered = prompt(t.pinPrompt);
+      if (entered !== storedPin) {
+        alert(t.pinIncorrectMsg);
+        return;
+      }
+      sessionStorage.setItem('pinValidated', 'true');
+    }
+
+    // Validar que haya niño activo
+    if (!activeChildId) {
+      alert(t.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.');
+      return;
+    }
+  }
+
+  // Guardar nuevo rol y actualizar interfaz
+  localStorage.setItem('userRole', nextRole);
+  alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
+
+  applyTranslations(lang);
+  updateTabVisibility();
+  showTab(nextRole === 'parent' ? 'settings' : 'tasks');
+  updateHeaderName();
+  renderChildrenList();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+  renderChildRewards();
+});
 
 });
 
