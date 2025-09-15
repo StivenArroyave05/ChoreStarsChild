@@ -408,7 +408,7 @@ const translations = {
     invalidFamilyCodeMsg:   '❌ Código familiar no válido.',
     childJoinSuccessMsg:    '✅ ¡Bienvenido, {name}!',
     eventMissingFields:     '❌ Completa todos los campos.',
-    authTitle: 		    '👤 Padre – Registro / Login',
+    authTitle: 		    '👫 Padres – Registro / Login',
     authEmailPlaceholder:   'Email',
     authPassPlaceholder:    'Contraseña',
     signupBtn: 		    'Registrarse',
@@ -416,7 +416,7 @@ const translations = {
     joinTitle: 		    '👦👧 Unirse a la familia',
     joinCodePlaceholder:    'Código familiar',
     joinNamePlaceholder:    'Nombre del niño',
-    joinAgePlaceholder: 'Edad',
+    joinAgePlaceholder:     'Edad',
     joinBtn: 		    'Unirse',
     yourCodeLabel: 	    'Tu código:',
     registeredChildrenTitle: 'Niños registrados',
@@ -428,21 +428,21 @@ const translations = {
     roleParent: 	    'Padre',
     roleChild: 		    'Niño',
     startBtn: 		    'Comenzar',
-    selectChildBtn: 'Seleccionar',
-    deleteChildBtn: 'Eliminar',
-    childNamePlaceholder: 'Nombre del niño',
-    childAgePlaceholder: 'Edad',
-    addChildBtn: 'Añadir niño',
-    selectChildBtn: 'Seleccionar',
-    deleteChildBtn: 'Eliminar',
-    childManagementLabel: 'Gestión de niños',
-    yourCodeLabel: 'Código familiar:',
+    selectChildBtn: 	    'Seleccionar',
+    deleteChildBtn: 	    'Eliminar',
+    childNamePlaceholder:   'Nombre del niño',
+    childAgePlaceholder:    'Edad',
+    addChildBtn: 	    'Añadir niño',
+    selectChildBtn: 	    'Seleccionar',
+    deleteChildBtn: 	    'Eliminar',
+    childManagementLabel:   'Gestión de niños',
+    yourCodeLabel: 	    'Código familiar:',
     registeredChildrenTitle: 'Niños registrados',
-    selectChildBtn: 'Seleccionar',
-    deleteChildBtn: 'Eliminar',
-    confirmDeleteChild: '¿Eliminar a {name}?',
-    parentRoleLabel: 'Padre',
-    defaultChildName: 'Niño activo',
+    selectChildBtn: 	    'Seleccionar',
+    deleteChildBtn: 	    'Eliminar',
+    confirmDeleteChild:     '¿Eliminar a {name}?',
+    parentRoleLabel: 	    'Padre',
+    defaultChildName: 	    'Niño activo',
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -570,7 +570,7 @@ const translations = {
     invalidFamilyCodeMsg:   '❌ Invalid family code.',
     childJoinSuccessMsg:    '✅ Welcome, {name}!',
     eventMissingFields:     '❌ Fill in all fields.',
-    authTitle: 		    '👤 Parent – Sign Up / Login',
+    authTitle: 		    '👫 Parents – Sign Up / Login',
     authEmailPlaceholder:   'Email',
     authPassPlaceholder:    'Password',
     signupBtn: 		    'Sign Up',
@@ -578,33 +578,33 @@ const translations = {
     joinTitle: 		    '👦👧 Join the Family',
     joinCodePlaceholder:    'Family Code',
     joinNamePlaceholder:    'Child Name',
-    joinAgePlaceholder: 'Age',
+    joinAgePlaceholder:     'Age',
     joinBtn: 		    'Join',
     yourCodeLabel: 	    'Your code:',
     registeredChildrenTitle: 'Registered children',
     inviteTitle: 	    'Add your children',
     shareCodeLabel: 	    'Share this family code:',
     copyCodeBtn: 	    'Copy code',
-    shareLinkBtn: 'Share link',
+    shareLinkBtn: 	    'Share link',
     roleLabel: 		    'Role:',
     roleParent: 	    'Parent',
     roleChild: 		    'Child',
     startBtn: 	    	    'Start',
-    selectChildBtn: 'Select',
-    deleteChildBtn: 'Delete',
-    childNamePlaceholder: 'Child name',
-    childAgePlaceholder: 'Age',
-    addChildBtn: 'Add child',
-    selectChildBtn: 'Select',
-    deleteChildBtn: 'Delete',
-    childManagementLabel: 'Child management',
-    yourCodeLabel: 'Family code:',
+    selectChildBtn: 	    'Select',
+    deleteChildBtn: 	    'Delete',
+    childNamePlaceholder:   'Child name',
+    childAgePlaceholder:    'Age',
+    addChildBtn: 	    'Add child',
+    selectChildBtn: 	    'Select',
+    deleteChildBtn: 	    'Delete',
+    childManagementLabel:   'Child management',
+    yourCodeLabel: 	    'Family code:',
     registeredChildrenTitle: 'Registered children',
-    selectChildBtn: 'Select',
-    deleteChildBtn: 'Delete',
-    confirmDeleteChild: 'Delete {name}?',
-    parentRoleLabel: 'Parent',
-    defaultChildName: 'Active child',
+    selectChildBtn: 	    'Select',
+    deleteChildBtn: 	    'Delete',
+    confirmDeleteChild:     'Delete {name}?',
+    parentRoleLabel: 	    'Parent',
+    defaultChildName:       'Active child',
   }
 };
 
@@ -1205,6 +1205,7 @@ function renderChildrenList() {
     });
   });
 }
+
 
 
 /**
@@ -2198,33 +2199,33 @@ document.getElementById('add-child')?.addEventListener('click', () => {
 
 
 // ➖ Evento Seleccionar / Eliminar Niño
-document.getElementById('children-list')?.addEventListener('click', async e => {
-  const lang = localStorage.getItem('lang') || 'es';
-  const id   = e.target.dataset.id;
+['children-list', 'settings-children-list'].forEach(listId => {
+  document.getElementById(listId)?.addEventListener('click', async e => {
+    const lang = localStorage.getItem('lang') || 'es';
+    const id   = e.target.dataset.id;
 
-  // Seleccionar niño
-  if (e.target.classList.contains('select-child')) {
-    return selectChild(id);
-  }
-
-  // Eliminar niño
-  if (e.target.classList.contains('delete-child')) {
-    const child = children.find(c => c.id === id);
-    const msg   = translations[lang]
-      .confirmDeleteChild
-      .replace('{name}', child?.name);
-    if (!confirm(msg)) return;
-
-    // Borra el documento del niño en Firestore
-    await deleteDoc(doc(db, 'users', id));
-
-    // Si el niño borrado era el activo, ajusta activeChildId
-    if (activeChildId === id) {
-      activeChildId = children.find(c => c.id !== id)?.id || null;
-      if (activeChildId) selectChild(activeChildId);
-      else showScreen('welcome-screen');
+    // Seleccionar niño
+    if (e.target.classList.contains('select-child')) {
+      return selectChild(id);
     }
-  }
+
+    // Eliminar niño
+    if (e.target.classList.contains('delete-child')) {
+      const child = children.find(c => c.id === id);
+      const msg   = translations[lang]
+        .confirmDeleteChild
+        .replace('{name}', child?.name);
+      if (!confirm(msg)) return;
+
+      await deleteDoc(doc(db, 'users', id));
+
+      if (activeChildId === id) {
+        activeChildId = children.find(c => c.id !== id)?.id || null;
+        if (activeChildId) selectChild(activeChildId);
+        else showScreen('welcome-screen');
+      }
+    }
+  });
 });
 
 
