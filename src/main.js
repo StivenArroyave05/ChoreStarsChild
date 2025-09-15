@@ -188,14 +188,15 @@ async function loginParent(email, pass) {
 }
 
 // — Unirse como hijo (sesión anónima)
-async function joinAsChild(code, name) {
+async function joinAsChild(code, name, age) {
   const { user } = await signInAnonymously(auth);
   await waitForFamilyCode(code);
   await setDoc(doc(db, 'users', user.uid), {
     displayName: name,
-    role:        'child',
-    familyCode:  code,
-    joinedAt:    serverTimestamp()
+    age: age,
+    role: 'child',
+    familyCode: code,
+    joinedAt: serverTimestamp()
   });
   return user;
 }
@@ -227,23 +228,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // JOIN CHILD
-  document.getElementById('btn-join-family')?.addEventListener('click', async () => {
-    try {
-      const code = document.getElementById('join-family-code').value.trim();
-      const name = document.getElementById('join-child-name').value.trim();
-      if (!code || !name) {
-        throw new Error(translations[localStorage.getItem('lang')].eventMissingFields);
-      }
-      const user = await joinAsChild(code, name);
-      await initUserSession(user);
-      alert(
-        translations[localStorage.getItem('lang')]
-          .childJoinSuccessMsg.replace('{name}', name)
-      );
-    } catch (e) {
-      document.getElementById('join-error').textContent = e.message;
+document.getElementById('btn-join-family')?.addEventListener('click', async () => {
+  try {
+    const code = document.getElementById('join-family-code').value.trim();
+    const name = document.getElementById('join-child-name').value.trim();
+    const age  = parseInt(document.getElementById('join-child-age').value.trim(), 10);
+
+    if (!code || !name || isNaN(age)) {
+      throw new Error('Faltan campos');
     }
-  });
+
+    const user = await joinAsChild(code, name, age);
+    await initUserSession(user); // ← esto es clave
+
+    localStorage.setItem('userRole', 'child');
+    localStorage.setItem('lang', localStorage.getItem('lang') || 'es');
+
+    showScreen('app-root');
+  } catch (e) {
+    document.getElementById('join-error').textContent = e.message;
+  }
+});
+
 
   // Seleccionar / Eliminar niño
   document.getElementById('children-list')?.addEventListener('click', async e => {
