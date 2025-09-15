@@ -211,6 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass  = document.getElementById('auth-pass').value;
       const user  = await registerParent(email, pass);
       await initUserSession(user);
+      localStorage.setItem('sessionStarted', 'true');
     } catch (e) {
       document.getElementById('auth-error').textContent = e.message;
     }
@@ -223,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pass  = document.getElementById('auth-pass').value;
       const user  = await loginParent(email, pass);
       await initUserSession(user);
+      localStorage.setItem('sessionStarted', 'true');
     } catch (e) {
       document.getElementById('auth-error').textContent = e.message;
     }
@@ -240,7 +242,8 @@ document.getElementById('btn-join-family')?.addEventListener('click', async () =
     }
 
     const user = await joinAsChild(code, name, age);
-    await initUserSession(user); // ← esto es clave
+    await initUserSession(user);
+    localStorage.setItem('sessionStarted', 'true');
 
     localStorage.setItem('userRole', 'child');
     localStorage.setItem('lang', localStorage.getItem('lang') || 'es');
@@ -277,12 +280,14 @@ document.getElementById('btn-join-family')?.addEventListener('click', async () =
 
   // AUTH STATE OBSERVER
   onAuthStateChanged(auth, user => {
-    if (!user) {
+  if (!user) {
+    if (!localStorage.getItem('sessionStarted')) {
       showScreen('initial-screen');
-    } else {
-      initUserSession(user);
     }
-  });
+  } else {
+    initUserSession(user);
+  }
+});
 });
 
 
@@ -930,17 +935,67 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 ////////////////////////////////////////////////////////////////////////////////
 // 3) Inicialización única y lógica de rol/tab
 ////////////////////////////////////////////////////////////////////////////////
-document.addEventListener('DOMContentLoaded', () => {
-  // — Restaurar niño activo
-  activeChildId = localStorage.getItem('activeChildId') || null;
 
-  // — 3.1) Idioma y rol guardados o por defecto
+// ✅ Ocultar pantallas de inicio lo antes posible
+document.addEventListener('DOMContentLoaded', () => {
+  const initial = document.getElementById('initial-screen');
+  const welcome = document.getElementById('welcome-screen');
+  const appRoot = document.getElementById('app-root');
+
+  const sessionStarted = localStorage.getItem('sessionStarted') === 'true';
   const savedLang = localStorage.getItem('lang') || 'es';
   const savedRole = localStorage.getItem('userRole') || 'child';
+  activeChildId = localStorage.getItem('activeChildId') || null;
+
+  if (sessionStarted && savedRole && activeChildId) {
+    if (initial) initial.style.display = 'none';
+    if (welcome) welcome.style.display = 'none';
+    if (appRoot) appRoot.style.display = 'block';
+
+    showScreen('app-root');
+    applyTranslations(savedLang);
+    updateTabVisibility();
+    showTab(savedRole === 'parent' ? 'settings' : 'tasks');
+
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, 'users'),
+        where('familyCode', '==', localStorage.getItem('familyCode')),
+        where('role', '==', 'child')
+      ),
+      snap => {
+        children = snap.docs.map(d => ({
+          id: d.id,
+          name: d.data().displayName,
+          age: d.data().age || null
+        }));
+
+        renderChildrenList();
+
+        if (!activeChildId && children.length) {
+          activeChildId = children[0].id;
+          localStorage.setItem('activeChildId', activeChildId);
+        }
+
+        updateHeaderName();
+        updateTodayHeader();
+        renderChildTasks();
+        renderChildRewards();
+        renderWeeklyHistory();
+        updatePointDisplay();
+      }
+    );
+
+    return;
+  }
+
+  // — Si no hay sesión iniciada, continuar con flujo de bienvenida
+  if (initial) initial.style.display = 'block';
+  if (welcome) welcome.style.display = 'none';
+  if (appRoot) appRoot.style.display = 'none';
   applyTranslations(savedLang);
   renderChildrenList();
 
-  // — 3.1.1) Solicitar PIN la primera vez para padre (incluye recarga)
   if (savedRole === 'parent' && !localStorage.getItem('pin')) {
     const t = translations[savedLang];
     let newPin = '';
@@ -951,7 +1006,6 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(t.pinCreatedMsg);
   }
 
-  // — 3.1.2) Control de visibilidad de pestañas según rol
   function updateTabVisibility() {
     const role = localStorage.getItem('userRole') || 'child';
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -961,10 +1015,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   updateTabVisibility();
 
-  // — 3.1.3) Mostrar la pestaña inicial apropriada
   showTab(savedRole === 'parent' ? 'settings' : 'tasks');
 
-  // — 3.2) Ejecutar renders que dependen de idioma o penalizaciones
   updateHeaderName();
   updateTodayHeader();
   renderCutoffTime();
@@ -976,16 +1028,13 @@ document.addEventListener('DOMContentLoaded', () => {
   applyPendingDailyPenalties();
   applyPendingWeeklyPenalties();
 
-  // — 3.2.1) Renderizar contenido de la pestaña activa
   renderChildrenList();
   renderTasks();
   renderChildTasks();
   renderTaskSuggestions();
 
-  // — 3.3) Bienvenida: usar botones en lugar de selects
-  const welcomeScreen = document.getElementById('welcome-screen');
-  const langButtons   = Array.from(document.querySelectorAll('#welcome-lang-buttons button'));
-  const roleButtons   = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
+  const langButtons = Array.from(document.querySelectorAll('#welcome-lang-buttons button'));
+  const roleButtons = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
 
   let welcomeLangValue = savedLang;
   let welcomeRoleValue = savedRole;
@@ -1004,7 +1053,6 @@ document.addEventListener('DOMContentLoaded', () => {
   styleButtonGroup(langButtons, welcomeLangValue);
   styleButtonGroup(roleButtons, welcomeRoleValue);
 
-  // — Manejadores de idioma y rol
   langButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       welcomeLangValue = btn.dataset.value;
@@ -1023,32 +1071,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // — Restaurar sesión si ya hay idioma, rol y (opcionalmente) niño activo
-if (savedLang && savedRole) {
-  welcomeScreen.style.display = 'none';
-  showScreen('app-root');
-
-  applyTranslations(savedLang);
-  updateTabVisibility();
-  showTab(savedRole === 'parent' ? 'settings' : 'tasks');
-
-  renderChildrenList();
-  updateHeaderName(); // ← esto mostrará el nombre del niño activo
-  updateTodayHeader();
-  renderCutoffTime();
-  renderWeekStart();
-  renderWeeklyHistory();
-  renderBadges();
-  updatePointDisplay();
-  updateFooterVersion();
-  renderTasks();
-  renderChildTasks();
-  renderTaskSuggestions();
-  renderChildRewards();
-}
-
-
-  // — 3.6) Botón “Comenzar”
   document.getElementById('welcome-start')?.addEventListener('click', () => {
     const lang = welcomeLangValue || 'es';
     const role = welcomeRoleValue || 'child';
@@ -1056,7 +1078,6 @@ if (savedLang && savedRole) {
     localStorage.setItem('lang', lang);
     localStorage.setItem('userRole', role);
     localStorage.setItem('activeChildId', activeChildId);
-
 
     applyTranslations(lang);
     updateTabVisibility();
@@ -1101,14 +1122,12 @@ if (savedLang && savedRole) {
     renderChildRewards();
   });
 
-  // — 3.8) Cambio de rol desde UI (footer)
   document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
     const lang     = localStorage.getItem('lang') || 'es';
     const t        = translations[lang];
     const current  = localStorage.getItem('userRole') || 'child';
     const nextRole = current === 'parent' ? 'child' : 'parent';
     activeChildId = localStorage.getItem('activeChildId') || null;
-
 
     if (nextRole === 'parent') {
       const storedPin = localStorage.getItem('pin');
