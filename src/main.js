@@ -166,6 +166,7 @@ async function initUserSession(user) {
   localStorage.setItem('userRole', role);
   localStorage.setItem('familyCode', familyCode);
   updateTabVisibility();
+  updateFooterVersion();
 
   // 2) Mostrar el código familiar en todas las ubicaciones
   const el1 = document.getElementById('family-code-display');
@@ -742,11 +743,18 @@ function applyTranslations(lang) {
 
 function updateFooterVersion() {
   const lang = localStorage.getItem("lang") || "es";
-  const template = translations[lang]?.footerText;
-  if (!template) return;
-  const text = template.replace("{version}", APP_VERSION);
-  document.getElementById("app-footer").textContent = text;
+  const t = translations[lang];
+  const versionText = t.footerText.replace("{version}", APP_VERSION);
+
+  const span = document.querySelector('#app-footer [data-i18n="footerText"]');
+  if (span) span.textContent = versionText;
+
+  const code = localStorage.getItem("familyCode");
+  const codeEl = document.getElementById("footer-family-code");
+  if (codeEl) codeEl.textContent = code || '—';
 }
+
+
 
 // ──────────────
 // Helpers para cálculos de clave de día/semana
