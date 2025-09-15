@@ -36,7 +36,8 @@ function showScreen(screenId) {
 
 function startSession(lang, role) {
   if (role === 'parent' && !activeChildId) {
-  alert('❗ Debes seleccionar un niño antes de comenzar.');
+  const msg = translations[lang]?.mustSelectChild || '❗ Debes seleccionar un niño antes de comenzar.';
+  alert(msg);
   return;
   }
 
@@ -545,6 +546,11 @@ const translations = {
     confirmDeleteChild:     '¿Eliminar a {name}?',
     parentRoleLabel: 	    'Padre',
     defaultChildName: 	    'Niño activo',
+    mustSelectChild: 	    '❗ Debes seleccionar un niño antes de comenzar.',
+    pinCreatePrompt: 	    'Crea un PIN para proteger la configuración:',
+    pinCreatedMsg:	    '✅ PIN creado correctamente.',
+    pinPrompt: 		    'Ingresa tu PIN para acceder a la configuración:',
+    pinIncorrectMsg: 	    '❌ PIN incorrecto. Intenta de nuevo.',
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -707,6 +713,11 @@ const translations = {
     confirmDeleteChild:     'Delete {name}?',
     parentRoleLabel: 	    'Parent',
     defaultChildName:       'Active child',
+    mustSelectChild: 	    '❗ You must select a child before starting.',
+    pinCreatePrompt: 	    'Create a PIN to protect settings:',
+    pinCreatedMsg: 	    '✅ PIN created successfully.',
+    pinPrompt: 		    'Enter your PIN to access settings:',
+    pinIncorrectMsg: 	    '❌ Incorrect PIN. Please try again.',
   }
 };
 
