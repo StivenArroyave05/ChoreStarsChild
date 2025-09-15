@@ -1013,10 +1013,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // — Ocultar bienvenida si ya hay idioma y rol definidos
-  if (savedLang && savedRole) {
-    welcomeScreen.style.display = 'none';
-  }
+  // — Restaurar sesión si ya hay idioma, rol y (opcionalmente) niño activo
+if (savedLang && savedRole) {
+  welcomeScreen.style.display = 'none';
+  showScreen('app-root');
+
+  activeChildId = localStorage.getItem('activeChildId') || null;
+
+  applyTranslations(savedLang);
+  updateTabVisibility();
+  showTab(savedRole === 'parent' ? 'settings' : 'tasks');
+
+  renderChildrenList();
+  updateHeaderName();
+  updateTodayHeader();
+  renderCutoffTime();
+  renderWeekStart();
+  renderWeeklyHistory();
+  renderBadges();
+  updatePointDisplay();
+  updateFooterVersion();
+  renderTasks();
+  renderChildTasks();
+  renderTaskSuggestions();
+  renderChildRewards();
+}
+
 
   // — 3.6) Botón “Comenzar”
   document.getElementById('welcome-start')?.addEventListener('click', () => {
@@ -1025,6 +1047,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     localStorage.setItem('lang', lang);
     localStorage.setItem('userRole', role);
+    localStorage.setItem('activeChildId', activeChildId);
+
 
     applyTranslations(lang);
     updateTabVisibility();
@@ -1075,6 +1099,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const t        = translations[lang];
     const current  = localStorage.getItem('userRole') || 'child';
     const nextRole = current === 'parent' ? 'child' : 'parent';
+    activeChildId = localStorage.getItem('activeChildId') || null;
+
 
     if (nextRole === 'parent') {
       const storedPin = localStorage.getItem('pin');
