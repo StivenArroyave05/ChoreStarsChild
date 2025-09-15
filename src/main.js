@@ -9,8 +9,10 @@ import {
 } from 'firebase/auth';
 import {
   doc,
+  deleteDoc,
   setDoc,
   getDoc,
+  getDocs,
   serverTimestamp,
   collection,
   query,
@@ -18,89 +20,154 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 
-console.log('✅ Firebase Auth:', auth);
-console.log('✅ Firestore DB:', db);
+// — Estado global de hijos
+let children = [];
+let activeChildId = null;
 
-// — Inicializa sesión de usuario: carga perfil, arranca listeners y muestra bienvenida
+// — Muestra solo la pantalla indicada
+function showScreen(screenId) {
+  ['initial-screen', 'invite-screen', 'welcome-screen', 'app-root']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.display = (id === screenId ? '' : 'none');
+    });
+}
+
+// — Copia familyCode al portapapeles
+document.getElementById('btn-copy-code')?.addEventListener('click', () => {
+  const code = localStorage.getItem('familyCode');
+  if (code) navigator.clipboard.writeText(code);
+});
+
+document.getElementById('btn-share-link')?.addEventListener('click', async () => {
+  const code = localStorage.getItem('familyCode');
+  if (!code) return;
+
+  const baseUrl = window.location.origin + window.location.pathname;
+  const link = `${baseUrl}?join=${code}`;
+
+  // Intenta usar la API de compartir si está disponible
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: 'Unirse a la familia',
+        text: 'Haz clic para unirte con tu nombre y edad',
+        url: link
+      });
+    } catch (e) {
+      alert('No se pudo compartir el enlace');
+    }
+  } else {
+    // Si no está disponible, copia al portapapeles
+    try {
+      await navigator.clipboard.writeText(link);
+      alert('Enlace copiado al portapapeles');
+    } catch (e) {
+      alert('No se pudo copiar el enlace');
+    }
+  }
+});
+
+
+// — Pausa hasta que families/{code} exista
+async function waitForFamilyCode(code, retries = 5, delay = 500) {
+  for (let i = 0; i < retries; i++) {
+    const snap = await getDoc(doc(db, 'families', code));
+    if (snap.exists()) return;
+    await new Promise(r => setTimeout(r, delay));
+  }
+  throw new Error(translations[localStorage.getItem('lang')].invalidFamilyCodeMsg);
+}
+
+// — Inicia sesión y levanta listeners
 async function initUserSession(user) {
-  // 1) Leer perfil Firestore
-  const snap = await getDoc(doc(db, 'users', user.uid));
-  if (!snap.exists()) {
-    console.warn('Perfil no encontrado, reintentando en 500ms…');
-    await new Promise(r => setTimeout(r, 500));
+  // 1) Obtener perfil
+  const userSnap = await getDoc(doc(db, 'users', user.uid));
+  if (!userSnap.exists()) {
+    await new Promise(r => setTimeout(r, 300));
     return initUserSession(user);
   }
-  const { displayName, role, familyCode } = snap.data();
 
-  // 2) Guardar en localStorage
-  localStorage.setItem('displayName', displayName);
-  localStorage.setItem('userRole',     role);
-  localStorage.setItem('familyCode',   familyCode);
+  const { role, familyCode } = userSnap.data();
+  localStorage.setItem('familyCode', familyCode);
 
-  // 3) Mostrar FamilyCode en UI
-  const codeEl = document.getElementById('family-code-display');
-  if (codeEl) codeEl.textContent = familyCode;
+  // 2) Mostrar el código familiar en todas las ubicaciones
+const el1 = document.getElementById('family-code-display');
+if (el1) el1.textContent = familyCode;
 
-  // 4) Arrancar listeners en tiempo real
-  startRealtimeListeners(familyCode);
+const el2 = document.getElementById('settings-family-code');
+if (el2) el2.textContent = familyCode;
 
-  // 5) Mostrar pantalla de bienvenida
-  showWelcomeScreen();
-}
+  // 3) Listener en tiempo real SOLO para hijos
+  onSnapshot(
+    query(
+      collection(db, 'users'),
+      where('familyCode', '==', familyCode),
+      where('role', '==', 'child')
+    ),
+    snap => {
+      children = snap.docs.map(d => ({
+        id:   d.id,
+        name: d.data().displayName,
+        age:  d.data().age || null
+      }));
 
-// — Genera un código familiar de 5 caracteres
-function generateFamilyCode() {
-  return Math.random().toString(36).substring(2, 7).toUpperCase();
-}
+      if (!activeChildId && children.length) {
+        activeChildId = children[0].id;
+      }
 
-// — Muestra error en UI
-function showAuthError(msg) {
-  const el = document.getElementById('auth-error');
-  if (el) el.textContent = msg;
-}
+      renderChildrenList(); // ← actualiza ambas listas si usas IDs únicos
+    }
+  );
 
-// — Pantallas: inicial, bienvenida y app
-function showInitialScreen() {
-  document.getElementById('initial-screen').style.display = '';
-  document.getElementById('welcome-screen').style.display = 'none';
-  document.getElementById('app-root').style.display       = 'none';
-}
-function showWelcomeScreen() {
-  document.getElementById('initial-screen').style.display = 'none';
-  document.getElementById('welcome-screen').style.display = '';
-  document.getElementById('app-root').style.display       = 'none';
-}
-function showAppRoot() {
-  document.getElementById('initial-screen').style.display = 'none';
-  document.getElementById('welcome-screen').style.display = 'none';
-  document.getElementById('app-root').style.display       = '';
-}
+  // 4) Listeners de tareas y recompensas
+  onSnapshot(
+    query(collection(db, 'tasks'), where('familyCode', '==', familyCode)),
+    snap => {
+      renderTasks?.(snap.docs);
+      renderChildTasks?.(snap.docs);
+    }
+  );
+  onSnapshot(
+    query(collection(db, 'rewards'), where('familyCode', '==', familyCode)),
+    snap => renderChildRewards?.(snap.docs)
+  );
 
-// — Muestra/oculta Registro y Join
-function showAuthSections(user) {
-  const authSec = document.getElementById('auth-section');
-  const joinSec = document.getElementById('child-join-section');
-  if (!user) {
-    authSec && (authSec.style.display = '');
-    joinSec && (joinSec.style.display = '');
-  } else if (user.isAnonymous) {
-    authSec && (authSec.style.display = 'none');
-    joinSec && (joinSec.style.display = '');
-  } else {
-    authSec && (authSec.style.display = 'none');
-    joinSec && (joinSec.style.display = 'none');
+// 5) Flujo padre vs. hijo
+if (role === 'parent') {
+  await waitForFamilyCode(familyCode);
+
+  const kidsSnap = await getDocs(
+    query(
+      collection(db, 'users'),
+      where('familyCode', '==', familyCode),
+      where('role', '==', 'child')
+    )
+  );
+
+  if (kidsSnap.empty) {
+    const inviteEl = document.getElementById('invite-code-display');
+    if (inviteEl) inviteEl.textContent = familyCode;
+    return showScreen('invite-screen');
   }
+
+  showScreen('welcome-screen');
+  return;
 }
 
-// — Registra padre y crea family + user
-async function registerParent(email, password) {
-  const { user } = await createUserWithEmailAndPassword(auth, email, password);
-  const code     = generateFamilyCode();
+  showScreen('app-root');
+}
+
+// — Registra un padre y su familia
+async function registerParent(email, pass) {
+  const { user } = await createUserWithEmailAndPassword(auth, email, pass);
+  const code = Math.random().toString(36).substring(2, 7).toUpperCase();
 
   await setDoc(doc(db, 'families', code), {
     parentUid:  user.uid,
-    createdAt:  serverTimestamp(),
     familyCode: code,
+    createdAt:  serverTimestamp(),
     locale:     localStorage.getItem('lang') || 'es'
   });
 
@@ -115,18 +182,15 @@ async function registerParent(email, password) {
 }
 
 // — Login de padre
-async function loginParent(email, password) {
-  const { user } = await signInWithEmailAndPassword(auth, email, password);
+async function loginParent(email, pass) {
+  const { user } = await signInWithEmailAndPassword(auth, email, pass);
   return user;
 }
 
-// — Join como hijo (anónimo)
+// — Unirse como hijo (sesión anónima)
 async function joinAsChild(code, name) {
   const { user } = await signInAnonymously(auth);
-  const famSnap  = await getDoc(doc(db, 'families', code));
-  if (!famSnap.exists()) {
-    throw new Error(translations[localStorage.getItem('lang')].invalidFamilyCodeMsg);
-  }
+  await waitForFamilyCode(code);
   await setDoc(doc(db, 'users', user.uid), {
     displayName: name,
     role:        'child',
@@ -136,130 +200,85 @@ async function joinAsChild(code, name) {
   return user;
 }
 
-// — Inicia listeners en tiempo real
-function startRealtimeListeners(familyCode) {
-  // Usuarios
-  onSnapshot(
-    query(collection(db, 'users'), where('familyCode','==',familyCode)),
-    snap => {
-      const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (typeof renderChildrenList === 'function') renderChildrenList(list);
-    }
-  );
-
-  // Tareas
-  onSnapshot(
-    query(collection(db, 'tasks'), where('familyCode','==',familyCode)),
-    snap => {
-      const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (typeof renderTasks === 'function')      renderTasks(tasks);
-      if (typeof renderChildTasks === 'function') renderChildTasks(tasks);
-    }
-  );
-
-  // Recompensas
-  onSnapshot(
-    query(collection(db, 'rewards'), where('familyCode','==',familyCode)),
-    snap => {
-      const rewards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (typeof renderChildRewards === 'function') renderChildRewards(rewards);
-    }
-  );
-}
-
-// — Carga UI tras welcome
-function loadFamilyData() {
-  if (typeof updateHeaderName === 'function')      updateHeaderName();
-  if (typeof updatePointDisplay === 'function')    updatePointDisplay();
-  if (typeof renderTaskSuggestions === 'function') renderTaskSuggestions();
-}
-
-// ========================================================
+// — DOMContentLoaded: enlazar botones y auth observer
 document.addEventListener('DOMContentLoaded', () => {
-  // — Registro padre
+  // SIGN UP
   document.getElementById('btn-signup')?.addEventListener('click', async () => {
-    const email = document.getElementById('auth-email').value.trim();
-    const pass  = document.getElementById('auth-pass').value;
     try {
-      const user = await registerParent(email, pass);
+      const email = document.getElementById('auth-email').value.trim();
+      const pass  = document.getElementById('auth-pass').value;
+      const user  = await registerParent(email, pass);
       await initUserSession(user);
     } catch (e) {
-      showAuthError(e.message);
+      document.getElementById('auth-error').textContent = e.message;
     }
   });
 
-  // — Login padre
+  // LOGIN
   document.getElementById('btn-login')?.addEventListener('click', async () => {
-    const email = document.getElementById('auth-email').value.trim();
-    const pass  = document.getElementById('auth-pass').value;
     try {
-      const user = await loginParent(email, pass);
+      const email = document.getElementById('auth-email').value.trim();
+      const pass  = document.getElementById('auth-pass').value;
+      const user  = await loginParent(email, pass);
       await initUserSession(user);
     } catch (e) {
-      showAuthError(e.message);
+      document.getElementById('auth-error').textContent = e.message;
     }
   });
 
-  // — Join hijo
+  // JOIN CHILD
   document.getElementById('btn-join-family')?.addEventListener('click', async () => {
-    const code  = document.getElementById('join-family-code').value.trim();
-    const name  = document.getElementById('join-child-name').value.trim();
-    const errEl = document.getElementById('join-error');
-    if (errEl) errEl.textContent = '';
-    if (!code || !name) {
-      if (errEl) {
-        errEl.textContent = translations[localStorage.getItem('lang')].eventMissingFields;
-      }
-      return;
-    }
     try {
+      const code = document.getElementById('join-family-code').value.trim();
+      const name = document.getElementById('join-child-name').value.trim();
+      if (!code || !name) {
+        throw new Error(translations[localStorage.getItem('lang')].eventMissingFields);
+      }
       const user = await joinAsChild(code, name);
       await initUserSession(user);
-      alert(translations[localStorage.getItem('lang')].childJoinSuccessMsg.replace('{name}', name));
+      alert(
+        translations[localStorage.getItem('lang')]
+          .childJoinSuccessMsg.replace('{name}', name)
+      );
     } catch (e) {
-      if (errEl) errEl.textContent = e.message;
+      document.getElementById('join-error').textContent = e.message;
     }
   });
 
-  // — Bienvenida: idioma y rol
-  document.querySelectorAll('#welcome-lang-buttons button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#welcome-lang-buttons button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-  document.querySelectorAll('#welcome-role-buttons button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#welcome-role-buttons button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+  // Seleccionar / Eliminar niño
+  document.getElementById('children-list')?.addEventListener('click', async e => {
+    const lang = localStorage.getItem('lang') || 'es';
+    const id   = e.target.dataset.id;
 
-  // — Botón “Comenzar”
-  document.getElementById('welcome-start')?.addEventListener('click', () => {
-    const langBtn = document.querySelector('#welcome-lang-buttons button.active');
-    const roleBtn = document.querySelector('#welcome-role-buttons button.active');
-    const lang    = langBtn?.dataset.value || 'es';
-    const role    = roleBtn?.dataset.value || 'child';
+    if (e.target.classList.contains('select-child')) {
+      return selectChild(id);
+    }
+    if (e.target.classList.contains('delete-child')) {
+      const child = children.find(c => c.id === id);
+      const msg   = translations[lang].confirmDeleteChild.replace('{name}', child?.name);
+      if (!confirm(msg)) return;
 
-    localStorage.setItem('lang',     lang);
-    localStorage.setItem('userRole', role);
-    applyTranslations(lang);
+      // Borra el niño de Firestore; el snapshot refresca la lista
+      await deleteDoc(doc(db, 'users', id));
 
-    showAppRoot();
-    loadFamilyData();
+      if (activeChildId === id) {
+        activeChildId = children.find(c => c.id !== id)?.id || null;
+        if (activeChildId) selectChild(activeChildId);
+      }
+    }
   });
 
-  // — Observador Auth
-  onAuthStateChanged(auth, async user => {
+  // AUTH STATE OBSERVER
+  onAuthStateChanged(auth, user => {
     if (!user) {
-      showInitialScreen();
-      showAuthSections(user);
+      showScreen('initial-screen');
     } else {
-      await initUserSession(user);
+      initUserSession(user);
     }
   });
 });
+
+
 
 // 1) Traducciones
 const translations = {
@@ -389,6 +408,41 @@ const translations = {
     invalidFamilyCodeMsg:   '❌ Código familiar no válido.',
     childJoinSuccessMsg:    '✅ ¡Bienvenido, {name}!',
     eventMissingFields:     '❌ Completa todos los campos.',
+    authTitle: 		    '👤 Padre – Registro / Login',
+    authEmailPlaceholder:   'Email',
+    authPassPlaceholder:    'Contraseña',
+    signupBtn: 		    'Registrarse',
+    loginBtn: 		    'Iniciar sesión',
+    joinTitle: 		    '👦👧 Unirse a la familia',
+    joinCodePlaceholder:    'Código familiar',
+    joinNamePlaceholder:    'Nombre del niño',
+    joinAgePlaceholder: 'Edad',
+    joinBtn: 		    'Unirse',
+    yourCodeLabel: 	    'Tu código:',
+    registeredChildrenTitle: 'Niños registrados',
+    inviteTitle: 	    'Agrega a tus hijos',
+    shareCodeLabel: 	    'Comparte este código familiar:',
+    copyCodeBtn: 	    'Copiar código',
+    shareLinkBtn: 'Compartir enlace',
+    roleLabel: 		    'Rol:',
+    roleParent: 	    'Padre',
+    roleChild: 		    'Niño',
+    startBtn: 		    'Comenzar',
+    selectChildBtn: 'Seleccionar',
+    deleteChildBtn: 'Eliminar',
+    childNamePlaceholder: 'Nombre del niño',
+    childAgePlaceholder: 'Edad',
+    addChildBtn: 'Añadir niño',
+    selectChildBtn: 'Seleccionar',
+    deleteChildBtn: 'Eliminar',
+    childManagementLabel: 'Gestión de niños',
+    yourCodeLabel: 'Código familiar:',
+    registeredChildrenTitle: 'Niños registrados',
+    selectChildBtn: 'Seleccionar',
+    deleteChildBtn: 'Eliminar',
+    confirmDeleteChild: '¿Eliminar a {name}?',
+    parentRoleLabel: 'Padre',
+    defaultChildName: 'Niño activo',
   },
   en: {
     appTitle:               "Chore Stars Child",
@@ -516,6 +570,41 @@ const translations = {
     invalidFamilyCodeMsg:   '❌ Invalid family code.',
     childJoinSuccessMsg:    '✅ Welcome, {name}!',
     eventMissingFields:     '❌ Fill in all fields.',
+    authTitle: 		    '👤 Parent – Sign Up / Login',
+    authEmailPlaceholder:   'Email',
+    authPassPlaceholder:    'Password',
+    signupBtn: 		    'Sign Up',
+    loginBtn: 		    'Log In',
+    joinTitle: 		    '👦👧 Join the Family',
+    joinCodePlaceholder:    'Family Code',
+    joinNamePlaceholder:    'Child Name',
+    joinAgePlaceholder: 'Age',
+    joinBtn: 		    'Join',
+    yourCodeLabel: 	    'Your code:',
+    registeredChildrenTitle: 'Registered children',
+    inviteTitle: 	    'Add your children',
+    shareCodeLabel: 	    'Share this family code:',
+    copyCodeBtn: 	    'Copy code',
+    shareLinkBtn: 'Share link',
+    roleLabel: 		    'Role:',
+    roleParent: 	    'Parent',
+    roleChild: 		    'Child',
+    startBtn: 	    	    'Start',
+    selectChildBtn: 'Select',
+    deleteChildBtn: 'Delete',
+    childNamePlaceholder: 'Child name',
+    childAgePlaceholder: 'Age',
+    addChildBtn: 'Add child',
+    selectChildBtn: 'Select',
+    deleteChildBtn: 'Delete',
+    childManagementLabel: 'Child management',
+    yourCodeLabel: 'Family code:',
+    registeredChildrenTitle: 'Registered children',
+    selectChildBtn: 'Select',
+    deleteChildBtn: 'Delete',
+    confirmDeleteChild: 'Delete {name}?',
+    parentRoleLabel: 'Parent',
+    defaultChildName: 'Active child',
   }
 };
 
@@ -836,11 +925,13 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 ////////////////////////////////////////////////////////////////////////////////
 document.addEventListener('DOMContentLoaded', () => {
   // — 3.1) Idioma y rol guardados o por defecto
-  const savedLang = localStorage.getItem('lang')     || 'es';
+  const savedLang = localStorage.getItem('lang') || 'es';
+  const savedRole = localStorage.getItem('userRole') || 'child';
   applyTranslations(savedLang);
+  renderChildrenList();
 
   // — 3.1.1) Solicitar PIN la primera vez para padre (incluye recarga)
-  if (localStorage.getItem('userRole') === 'parent' && !localStorage.getItem('pin')) {
+  if (savedRole === 'parent' && !localStorage.getItem('pin')) {
     const t = translations[savedLang];
     let newPin = '';
     while (!newPin) {
@@ -855,18 +946,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const role = localStorage.getItem('userRole') || 'child';
     document.querySelectorAll('.tab-btn').forEach(btn => {
       const tab = btn.dataset.tab;
-      if (role === 'parent') {
-        btn.style.display = '';
-      } else {
-        btn.style.display = (tab === 'tasks' || tab === 'rewards') ? '' : 'none';
-      }
+      btn.style.display = (role === 'parent' || tab === 'tasks' || tab === 'rewards') ? '' : 'none';
     });
   }
   updateTabVisibility();
 
   // — 3.1.3) Mostrar la pestaña inicial apropriada
-  const startRole = localStorage.getItem('userRole') || 'child';
-  showTab(startRole === 'parent' ? 'settings' : 'tasks');
+  showTab(savedRole === 'parent' ? 'settings' : 'tasks');
 
   // — 3.2) Ejecutar renders que dependen de idioma o penalizaciones
   updateHeaderName();
@@ -881,7 +967,6 @@ document.addEventListener('DOMContentLoaded', () => {
   applyPendingWeeklyPenalties();
 
   // — 3.2.1) Renderizar contenido de la pestaña activa
-  updateHeaderName();
   renderChildrenList();
   renderTasks();
   renderChildTasks();
@@ -893,7 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const roleButtons   = Array.from(document.querySelectorAll('#welcome-role-buttons button'));
 
   let welcomeLangValue = savedLang;
-  let welcomeRoleValue = localStorage.getItem('userRole') || 'child';
+  let welcomeRoleValue = savedRole;
 
   function styleButtonGroup(buttons, activeValue) {
     buttons.forEach(btn => {
@@ -901,162 +986,127 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.toggle('bg-blue-600', isActive);
       btn.classList.toggle('text-white',  isActive);
       btn.classList.toggle('bg-gray-200', !isActive);
-      btn.classList.toggle('text-gray-700',!isActive);
+      btn.classList.toggle('text-gray-700', !isActive);
+      btn.classList.toggle('active', isActive);
     });
   }
 
   styleButtonGroup(langButtons, welcomeLangValue);
   styleButtonGroup(roleButtons, welcomeRoleValue);
 
-  if (localStorage.getItem('lang') && localStorage.getItem('userRole')) {
-    welcomeScreen.style.display = 'none';
-  }
-
-  // — 3.4) Click en botones de idioma
+  // — Manejadores de idioma y rol
   langButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       welcomeLangValue = btn.dataset.value;
-      styleButtonGroup(langButtons, welcomeLangValue);
+      localStorage.setItem('lang', welcomeLangValue);
       applyTranslations(welcomeLangValue);
+      renderChildrenList();
+      styleButtonGroup(langButtons, welcomeLangValue);
     });
   });
 
-  // — 3.5) Click en botones de rol
   roleButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       welcomeRoleValue = btn.dataset.value;
+      localStorage.setItem('userRole', welcomeRoleValue);
       styleButtonGroup(roleButtons, welcomeRoleValue);
     });
   });
 
-// — 3.6) Botón “Comenzar”: guarda idioma y rol, pide/valida PIN si es padre, oculta bienvenida y arranca UI
-document.getElementById('welcome-start')?.addEventListener('click', () => {
-  // 1) Selección de idioma
-  const langBtn = document.querySelector('#welcome-lang-buttons button.active');
-  const lang    = langBtn?.dataset.value || 'es';
-
-  // 2) Selección de rol
-  const roleBtn = document.querySelector('#welcome-role-buttons button.active');
-  const role    = roleBtn?.dataset.value || localStorage.getItem('userRole') || 'child';
-
-  // 3) Persistir idioma y rol
-  localStorage.setItem('lang',     lang);
-  localStorage.setItem('userRole', role);
-
-  // 4) Aplicar traducciones
-  applyTranslations(lang);
-
-  // 5) Actualizar visibilidad de pestañas según rol
-  updateTabVisibility();
-
-  // 6) Lógica de PIN para padres: creación si no hay, validación si ya existe
-  if (role === 'parent') {
-    const t         = translations[lang];
-    const storedPin = localStorage.getItem('pin');
-
-    if (!storedPin) {
-      // Crear PIN por primera vez
-      let newPin = '';
-      while (!newPin) {
-        newPin = prompt(t.pinCreatePrompt).trim();
-      }
-      localStorage.setItem('pin', newPin);
-      alert(t.pinCreatedMsg);
-
-    } else {
-      // Validar PIN existente
-      const entered = prompt(t.pinPrompt);
-      if (entered !== storedPin) {
-        return alert(t.pinIncorrectMsg);  // DETENER flujo si PIN es incorrecto
-      }
-    }
-
-    showTab('settings');
-  } else {
-    showTab('tasks');
+  // — Ocultar bienvenida si ya hay idioma y rol definidos
+  if (savedLang && savedRole) {
+    welcomeScreen.style.display = 'none';
   }
 
-  // 7) Mostrar la app principal
-  showAppRoot();
+  // — 3.6) Botón “Comenzar”
+  document.getElementById('welcome-start')?.addEventListener('click', () => {
+    const lang = welcomeLangValue || 'es';
+    const role = welcomeRoleValue || 'child';
 
-  // 8) Renderizar datos iniciales
-  renderChildrenList();
-  updateHeaderName();
+    localStorage.setItem('lang', lang);
+    localStorage.setItem('userRole', role);
 
-  updateTodayHeader();
-  renderCutoffTime();
-  renderWeekStart();
-  renderWeeklyHistory();
-  renderBadges();
-  updatePointDisplay();
-  updateFooterVersion();
+    applyTranslations(lang);
+    updateTabVisibility();
 
-  renderTasks();
-  renderChildTasks();
-  renderTaskSuggestions();
-  renderChildRewards();
-});
+    if (role === 'parent') {
+      const t = translations[lang];
+      const storedPin = localStorage.getItem('pin');
 
+      if (!storedPin) {
+        let newPin = '';
+        while (!newPin) {
+          newPin = prompt(t.pinCreatePrompt).trim();
+        }
+        localStorage.setItem('pin', newPin);
+        alert(t.pinCreatedMsg);
+      } else {
+        const entered = prompt(t.pinPrompt);
+        if (entered !== storedPin) {
+          return alert(t.pinIncorrectMsg);
+        }
+      }
+
+      showTab('settings');
+    } else {
+      showTab('tasks');
+    }
+
+    showScreen('app-root');
+    applyTranslations(lang);
+    renderChildrenList();
+    updateHeaderName();
+    updateTodayHeader();
+    renderCutoffTime();
+    renderWeekStart();
+    renderWeeklyHistory();
+    renderBadges();
+    updatePointDisplay();
+    updateFooterVersion();
+    renderTasks();
+    renderChildTasks();
+    renderTaskSuggestions();
+    renderChildRewards();
+  });
 
   // — 3.8) Cambio de rol desde UI (footer)
-document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
-  const lang     = localStorage.getItem('lang')     || 'es';
-  const t        = translations[lang];
-  const current  = localStorage.getItem('userRole') || 'child';
-  const nextRole = current === 'parent' ? 'child' : 'parent';
+  document.getElementById('toggle-role-btn')?.addEventListener('click', () => {
+    const lang     = localStorage.getItem('lang') || 'es';
+    const t        = translations[lang];
+    const current  = localStorage.getItem('userRole') || 'child';
+    const nextRole = current === 'parent' ? 'child' : 'parent';
 
-  // Si cambiamos a padre, crear o solicitar PIN
-  if (nextRole === 'parent') {
-    const storedPin = localStorage.getItem('pin');
-    if (!storedPin) {
-      let newPin = '';
-      while (!newPin) {
-        newPin = prompt(t.pinCreatePrompt).trim();
-      }
-      localStorage.setItem('pin', newPin);
-      alert(t.pinCreatedMsg);
-    } else {
-      const entered = prompt(t.pinPrompt);
-      if (entered !== storedPin) {
-        return alert(t.pinIncorrectMsg);
+    if (nextRole === 'parent') {
+      const storedPin = localStorage.getItem('pin');
+      if (!storedPin) {
+        let newPin = '';
+        while (!newPin) {
+          newPin = prompt(t.pinCreatePrompt).trim();
+        }
+        localStorage.setItem('pin', newPin);
+        alert(t.pinCreatedMsg);
+      } else {
+        const entered = prompt(t.pinPrompt);
+        if (entered !== storedPin) {
+          return alert(t.pinIncorrectMsg);
+        }
       }
     }
-  }
 
-  // Guardar nuevo rol y notificar
-  localStorage.setItem('userRole', nextRole);
-  alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
+    localStorage.setItem('userRole', nextRole);
+    alert(t.roleChangedMsg.replace('{role}', t[nextRole + 'Role']));
 
-  // Refrescar visibilidad y contenido
-  updateTabVisibility();
-  showTab(nextRole === 'parent' ? 'settings' : 'tasks');
-  updateHeaderName();
-  renderChildrenList();
-  renderTasks();
-  renderChildTasks();
-  renderTaskSuggestions();
-  renderChildRewards();
+    updateTabVisibility();
+    showTab(nextRole === 'parent' ? 'settings' : 'tasks');
+    applyTranslations(lang);
+    updateHeaderName();
+    renderChildrenList();
+    renderTasks();
+    renderChildTasks();
+    renderTaskSuggestions();
+    renderChildRewards();
+  });
 });
-});
-
-////////////////////////////////////////////////////////////////////////////////
-// X. Migración de un solo childName a array de children
-////////////////////////////////////////////////////////////////////////////////
-let children = JSON.parse(localStorage.getItem('children')) || [];
-const saveChildren = () =>
-  localStorage.setItem('children', JSON.stringify(children));
-
-// Si venías usando solo childName, lo migramos a children[]
-const singleName = localStorage.getItem('childName');
-if (children.length === 0 && singleName) {
-  const id = Date.now().toString();
-  children.push({ id, name: singleName });
-  saveChildren();
-  localStorage.removeItem('childName');
-}
-
-// ID del niño activo (para filtrar tareas)
-let activeChildId = children[0]?.id || null;
 
 ////////////////////////////////////////////////////////////////////////////////
 // 0. Funciones para renderizar y cambiar de niño activo
@@ -1066,21 +1116,20 @@ let activeChildId = children[0]?.id || null;
  */
 function updateHeaderName() {
   const label = document.getElementById('child-name-label');
-  const child = children.find(c => c.id === activeChildId);
   const role  = localStorage.getItem('userRole') || 'child';
   const lang  = localStorage.getItem('lang') || 'es';
   const t     = translations[lang];
 
   if (!label) return;
 
-  // Actualiza nombre del niño
-  label.textContent = child ? child.name : '';
+  const child = children.find(c => c.id === activeChildId);
+  const name = child?.name || t.defaultChildName;
+  label.textContent = name;
 
   // Elimina cualquier badge previo
   const existingBadge = document.getElementById('role-badge');
   if (existingBadge) existingBadge.remove();
 
-  // Si es padre, añade badge visual
   if (role === 'parent') {
     const badge = document.createElement('span');
     badge.id = 'role-badge';
@@ -1089,6 +1138,11 @@ function updateHeaderName() {
     badge.textContent = t.parentRoleLabel || 'Padre';
     label.parentNode.insertBefore(badge, label.nextSibling);
   }
+}
+
+function getActiveChildName() {
+  const child = children.find(c => c.id === activeChildId);
+  return child?.name || '';
 }
 
 
@@ -1121,35 +1175,34 @@ function updateTodayHeader() {
 
 
 function renderChildrenList() {
-  const ul = document.getElementById('children-list');
-  if (!ul) return;
-  ul.innerHTML = '';
+  const lists = [
+    document.getElementById('children-list'),
+    document.getElementById('settings-children-list')
+  ].filter(Boolean);
 
-  children.forEach(c => {
-    const li = document.createElement('li');
-    // clases base + padding para clic
-    li.className = 'flex justify-between items-center p-2 rounded cursor-pointer';
-    // si es el activo, le aplicamos estilos de selección
-    if (c.id === activeChildId) {
-      li.classList.add('bg-blue-100', 'text-blue-800', 'font-semibold');
-    }
+  const lang = localStorage.getItem('lang') || 'es';
+  const t = translations[lang];
 
-const lang = localStorage.getItem('lang') || 'es';
-const t    = translations[lang];
+  lists.forEach(ul => {
+    ul.innerHTML = '';
+    children.forEach(c => {
+      const li = document.createElement('li');
+      li.className = 'flex justify-between items-center bg-gray-100 p-2 rounded';
 
-li.innerHTML = `
-  <span>${c.name}</span>
-  <div class="space-x-2">
-    <button class="btn btn-secondary btn-sm select-child" data-id="${c.id}">
-      ${t.selectChildBtn}
-    </button>
-    <button class="btn btn-danger btn-sm delete-child" data-id="${c.id}">
-      ${t.deleteChildBtn}
-    </button>
-  </div>`;
-
-
-    ul.appendChild(li);
+      const ageText = c.age ? ` (${c.age})` : '';
+      li.innerHTML = `
+        <span class="font-medium">${c.name}${ageText}</span>
+        <div class="flex gap-2">
+          <button class="select-child btn btn-secondary btn-sm" data-id="${c.id}">
+            ${t.selectChildBtn}
+          </button>
+          <button class="delete-child btn btn-danger btn-sm" data-id="${c.id}">
+            ${t.deleteChildBtn}
+          </button>
+        </div>
+      `;
+      ul.appendChild(li);
+    });
   });
 }
 
@@ -1161,23 +1214,23 @@ li.innerHTML = `
 function selectChild(id) {
   activeChildId = id;
 
-  // refresca UI de niños y pestañas
+  const selectedChild = children.find(c => c.id === id);
+  const childName = selectedChild?.name || '';
+
+  // Actualiza encabezado
+  updateHeaderName(childName);
+  updateTodayHeader();
+
+  // Refresca UI de niños y pestañas
   renderChildrenList();
   renderChildTabs();
 
-  // refresca tareas y gestión
+  // Refresca tareas, historial y puntos
   renderChildTasks();
   renderTasks();
-
-  // actualiza puntos y barra
-  updatePointDisplay();
-
-  // actualiza subtítulo en el header
-  updateHeaderName();
-  updateTodayHeader();
-
-  // refresca historial del niño activo
   renderWeeklyHistory();
+  renderChildRewards();
+  updatePointDisplay();
 }
 
 
@@ -2145,37 +2198,35 @@ document.getElementById('add-child')?.addEventListener('click', () => {
 
 
 // ➖ Evento Seleccionar / Eliminar Niño
-document.getElementById('children-list')?.addEventListener('click', e => {
+document.getElementById('children-list')?.addEventListener('click', async e => {
   const lang = localStorage.getItem('lang') || 'es';
-  const id = e.target.dataset.id;
+  const id   = e.target.dataset.id;
 
+  // Seleccionar niño
   if (e.target.classList.contains('select-child')) {
-    selectChild(id);
+    return selectChild(id);
   }
 
+  // Eliminar niño
   if (e.target.classList.contains('delete-child')) {
-    const childName = children.find(c => c.id === id).name;
-    const msg = translations[lang].confirmDeleteChild.replace('{name}', childName);
+    const child = children.find(c => c.id === id);
+    const msg   = translations[lang]
+      .confirmDeleteChild
+      .replace('{name}', child?.name);
     if (!confirm(msg)) return;
 
-    children = children.filter(c => c.id !== id);
-    saveChildren();
+    // Borra el documento del niño en Firestore
+    await deleteDoc(doc(db, 'users', id));
 
-    tasks = tasks.filter(t => t.childId !== id);
-    saveTasks();
-
+    // Si el niño borrado era el activo, ajusta activeChildId
     if (activeChildId === id) {
-      activeChildId = children[0]?.id || null;
+      activeChildId = children.find(c => c.id !== id)?.id || null;
+      if (activeChildId) selectChild(activeChildId);
+      else showScreen('welcome-screen');
     }
-
-    renderChildrenList();
-    renderChildTabs();
-    renderTasks();
-    renderChildTasks();
-    updatePointDisplay();
-    renderTaskSuggestions();
   }
 });
+
 
 // ➕ Evento “Añadir Tarea”
 document.getElementById('add-task')?.addEventListener('click', () => {
