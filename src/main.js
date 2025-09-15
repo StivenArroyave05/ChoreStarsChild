@@ -118,6 +118,7 @@ if (el2) el2.textContent = familyCode;
       }
 
       renderChildrenList(); // ← actualiza ambas listas si usas IDs únicos
+      updateHeaderName();
     }
   );
 
@@ -930,6 +931,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // 3) Inicialización única y lógica de rol/tab
 ////////////////////////////////////////////////////////////////////////////////
 document.addEventListener('DOMContentLoaded', () => {
+  // — Restaurar niño activo
+  activeChildId = localStorage.getItem('activeChildId') || null;
+
   // — 3.1) Idioma y rol guardados o por defecto
   const savedLang = localStorage.getItem('lang') || 'es';
   const savedRole = localStorage.getItem('userRole') || 'child';
@@ -1024,14 +1028,12 @@ if (savedLang && savedRole) {
   welcomeScreen.style.display = 'none';
   showScreen('app-root');
 
-  activeChildId = localStorage.getItem('activeChildId') || null;
-
   applyTranslations(savedLang);
   updateTabVisibility();
   showTab(savedRole === 'parent' ? 'settings' : 'tasks');
 
   renderChildrenList();
-  updateHeaderName();
+  updateHeaderName(); // ← esto mostrará el nombre del niño activo
   updateTodayHeader();
   renderCutoffTime();
   renderWeekStart();
