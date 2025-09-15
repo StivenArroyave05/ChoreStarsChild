@@ -35,8 +35,9 @@ function showScreen(screenId) {
 }
 
 function startSession(lang, role) {
-  if (!activeChildId) {
-    return alert('❗ Debes seleccionar un niño antes de comenzar.');
+  if (role === 'parent' && !activeChildId) {
+  alert('❗ Debes seleccionar un niño antes de comenzar.');
+  return;
   }
 
   localStorage.setItem('lang', lang);
