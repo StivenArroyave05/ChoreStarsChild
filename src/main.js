@@ -1235,11 +1235,11 @@ function renderChildrenList() {
 
 
 /**
- * Escribe el nombre del niño activo en el header
+ * Escribe el nombre del niño activo en el header y guarda su selección
  */
-
 function selectChild(id) {
   activeChildId = id;
+  localStorage.setItem('activeChildId', id); // ← persistencia entre sesiones
 
   const selectedChild = children.find(c => c.id === id);
   const childName = selectedChild?.name || '';
